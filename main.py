@@ -47,8 +47,19 @@ def get_satelite_image(location, id):
     
 def get_street_label(location, id):
     center_x, center_y = location
-    url = f"https://maps.googleapis.com/maps/api/staticmap?center={center_x},{center_y}&&zoom=15&size=1024x1024&maptype=roadmap&format=JPEG&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:landscape%7Celement:geometry%7Cvisibility:off&style=feature:transit%7Celement:geometry%7Cvisibility:off&style=feature:administrative%7Celement:geometry.stroke%7Ccolor:0xffffff&style=feature:administrative%7Celement:geometry.fill%7Ccolor:0xffffff&style=feature:road.highway%7Celement:geometry.stroke%7Ccolor:0xffffff&style=feature:transit.line|element:geometry.stroke|color:0xffffff&style=feature:road%7Celement:geometry.stroke%7Ccolor:0x000000&key={key}"
-
+    url = f"https://maps.googleapis.com/maps/api/staticmap?" +\
+      "center={center_x},{center_y}&&"+\
+        "zoom=15&size=1024x1024&maptype=roadmap&format=JPEG&style=feature:all%7Celement:labels%7Cvisibility:off&"+\
+        "style=feature:landscape%7Celement:geometry%7Cvisibility:off&"+\
+        "style=feature:transit%7Celement:geometry%7Cvisibility:off&"+\
+        "style=feature:administrative%7Celement:geometry.stroke%7Ccolor:0xffffff&"+\
+        "style=feature:administrative%7Celement:geometry.fill%7Ccolor:0xffffff&"+\
+        "style=feature:road.highway%7Celement:geometry.stroke%7Ccolor:0xffffff&"+\
+        "style=feature:transit.line|element:geometry.stroke|color:0xffffff&"+\
+        "style=feature:road%7Celement:geometry.stroke%7Ccolor:0x000000"+\
+        "&key={key}"
+    print(url)
+    exit()
     response = requests.get(url)
     with open(f"data/{id}_label.jpg", "wb") as f:
         f.write(response.content)
