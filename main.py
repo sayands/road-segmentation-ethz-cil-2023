@@ -1,4 +1,6 @@
 import requests
+from PIL import Image
+from io import BytesIO
 
 key = "AIzaSyBRr3cZlbyDizvYzRUJvVirv2-B5PMyj_0"
 
@@ -36,14 +38,20 @@ city_coordinates = [[
 
 
 ZOOM_LEVEL = 16
+CROP_PIXELS = 20
 
 def get_satelite_image(location, folder, id):
     center_x, center_y = location
     url = f"https://maps.googleapis.com/maps/api/staticmap?center={center_x},{center_y}&zoom={ZOOM_LEVEL}&size=1024x1024&format=JPEG&maptype=satellite&key={key}"
     response = requests.get(url)
 
-    with open(f"data/{folder}/{id}.jpg", "wb") as f:
-        f.write(response.content)
+    image = Image.open(BytesIO(response.content))
+    # Get image size
+    width, height = image.size
+
+    # Crop image to remove bottom 20 pixels
+    cropped_image = image.crop((0, 0, width - CROP_PIXELS, height - CROP_PIXELS))
+    cropped_image.convert("RGB").save(f"data/{folder}/{id}.jpg")
 
 
 def get_street_label(location, folder, id):
@@ -60,8 +68,13 @@ def get_street_label(location, folder, id):
         "style=feature:road|element:geometry|color:0xffffff"+\
         f"&key={key}"
     response = requests.get(url)
-    with open(f"data/{folder}/{id}_label.jpg", "wb") as f:
-        f.write(response.content)
+    image = Image.open(BytesIO(response.content))
+    # Get image size
+    width, height = image.size
+
+    # Crop image to remove bottom 20 pixels
+    cropped_image = image.crop((0, 0, width - CROP_PIXELS, height - CROP_PIXELS))
+    cropped_image.convert("RGB").save(f"data/{folder}/{id}_label.jpg")
 
 def get_data(locations):
     location_folder = 6
