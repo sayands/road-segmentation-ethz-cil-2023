@@ -14,8 +14,8 @@ city_coordinates = [[
         # New York City, USA
         40.4961, # South
         40.9176, # North
-        -73.7004, # West
-        -74.2591, # East
+        -74.2591, # West
+        -73.7004, # East
     ],[
         # Sao Paulo, Brazil
         -23.8162, # South
@@ -87,6 +87,7 @@ def get_data(locations):
         
         start_x, end_x, start_y, end_y = location
         print(start_x, end_x, start_y, end_y)
+
         num_of_scans = int((abs(start_x - end_x) / step_x) * (abs(start_y - end_y) / step_y))
 
         print(f"Starting scanning for location {location_folder}.")
