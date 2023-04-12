@@ -35,9 +35,11 @@ city_coordinates = [[
 ]]
 
 
+ZOOM_LEVEL = 16
+
 def get_satelite_image(location, folder, id):
     center_x, center_y = location
-    url = f"https://maps.googleapis.com/maps/api/staticmap?center={center_x},{center_y}&zoom=15&size=1024x1024&format=JPEG&maptype=satellite&key={key}"
+    url = f"https://maps.googleapis.com/maps/api/staticmap?center={center_x},{center_y}&zoom={ZOOM_LEVEL}&size=1024x1024&format=JPEG&maptype=satellite&key={key}"
     response = requests.get(url)
 
     with open(f"data/{folder}/{id}.jpg", "wb") as f:
@@ -48,7 +50,7 @@ def get_street_label(location, folder, id):
     center_x, center_y = location
     url = f"https://maps.googleapis.com/maps/api/staticmap?" +\
       f"center={center_x},{center_y}&&"+\
-        "zoom=15&size=1024x1024&maptype=roadmap&format=JPEG&"+\
+        f"zoom={ZOOM_LEVEL}&size=1024x1024&maptype=roadmap&format=JPEG&"+\
         "style=feature:all|element:labels|visibility:off&"+\
         "style=feature:administrative|visibility:off&"+\
         "style=feature:landscape|visibility:off&"+\
@@ -62,11 +64,11 @@ def get_street_label(location, folder, id):
         f.write(response.content)
 
 def get_data(locations):
-    location_folder = 1
+    location_folder = 6
     for location in locations:
         # By test and trial I got to .15 as full move in each direction without having the images intersect.
-        step_x = .15
-        step_y = .15
+        step_x = .035
+        step_y = .035
         
         file_id = 1
         
@@ -89,5 +91,7 @@ def get_data(locations):
             start_x += step_x
         location_folder += 1
     print("Collected all data.")
+
+# 6 and on are with zoom level 16
 
 get_data(city_coordinates)
