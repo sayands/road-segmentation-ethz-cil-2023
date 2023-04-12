@@ -38,20 +38,20 @@ city_coordinates = [[
         2.4699, # East
     ], [
         # Zurich, Switzerland
-        47.4308514, # North
         47.3203031, # South
+        47.4308514, # North
         8.4487451, # West
         8.5977255, # East
     ], [
         # Sofia, Bulgaria
-        42.7831884, # North
         42.6039868, # South
+        42.7831884, # North
         23.2116106, # West
         23.4761724, # East
     ], [
         # Hyderabad, India
-        17.5950484, # North
         17.2190976, # South
+        17.5950484, # North
         78.1633353, # West
         78.6518683, # East
     ]
@@ -139,12 +139,10 @@ def get_data(locations):
             cur_y = start_y
             while cur_y <= end_y:
                 label_percent = get_street_labels((start_x, cur_y), location_folder, file_id)
+                if label_percent > MIN_ROAD_PERCENTAGE:
+                    get_satelite_image((start_x, cur_y), location_folder, file_id)
+                    file_id += 1
                 cur_y += step_y
-                if label_percent < MIN_ROAD_PERCENTAGE:
-                    continue
-
-                get_satelite_image((start_x, cur_y), location_folder, file_id)
-                file_id += 1
                 if file_id % 10 == 0:
                     print(f"Scanned through {file_id} files. For location {location_folder}")
             start_x += step_x
