@@ -12,8 +12,8 @@ train :
 
 wandb:
   wandb: false
-  entity: "giba-machine-perception"
-  project: "mp_test"
-  name: 'mp_test'
+  entity: ""
+  project: ""
+  name: ""
   group: null
   id : null
