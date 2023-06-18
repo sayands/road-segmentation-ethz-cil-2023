@@ -1,7 +1,7 @@
 # Road Segmentation Project - Computational Intelligence Lab - ETHZ 2023
 
 ### Requirements 
-Install a conda environment using ``requirements.yml``. 
+Install a conda environment using ``requirements.yaml``. 
 ```bash
 conda env create -f requirements.yml
 ```
