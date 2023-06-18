@@ -1,0 +1,19 @@
+seed        : 42
+num_workers : 4
+log_level   : INFO
+log_dir    : '' 
+data :
+  root_dir : /Users/sayands/Documents/Work/Courses/Computational-Intelligence-Lab/Project/data/seg-data
+
+train :
+  batch_size : 8
+  log_every  : 50
+  save_every : 1
+
+wandb:
+  wandb: false
+  entity: "giba-machine-perception"
+  project: "mp_test"
+  name: 'mp_test'
+  group: null
+  id : null

@@ -5,3 +5,4 @@ archive (1).zip
 data/
 *__pycache__
 *DS_Store
+logs/
