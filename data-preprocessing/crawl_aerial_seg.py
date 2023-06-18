@@ -4,7 +4,7 @@ from io import BytesIO
 import numpy as np
 import os
 
-KEY = os.getenv('GMAPS_KEY')
+KEY = "AIzaSyBRr3cZlbyDizvYzRUJvVirv2-B5PMyj_0"  # os.getenv('GMAPS_KEY')
 assert KEY
 city_coordinates = [[
         # Tokyo, Japan
@@ -58,11 +58,12 @@ city_coordinates = [[
 ]
 
 
-CROP_PIXELS =  20.
+IMAGE_RESOLUTION = 400
+CROP_PIXELS =  20
 MIN_ROAD_PERCENTAGE = 10.
 DATA_FOLDER = "data"
 
-ZOOM_LEVEL = 15
+ZOOM_LEVEL = 17
 ITEARTION_STEP = .035
 
 
@@ -70,7 +71,7 @@ def get_satelite_image(location, folder, id):
     center_x, center_y = location
     url = "https://maps.googleapis.com/maps/api/staticmap?"+\
         f"center={center_x},{center_y}"+\
-        f"&zoom={ZOOM_LEVEL}&size=1020x1020"+\
+        f"&zoom={ZOOM_LEVEL}&size={IMAGE_RESOLUTION + CROP_PIXELS}x{IMAGE_RESOLUTION + CROP_PIXELS}"+\
         f"&format=PNG&maptype=satellite&key={KEY}"
     response = requests.get(url)
 
@@ -87,7 +88,7 @@ def get_street_labels(location, folder, id):
     center_x, center_y = location
     url = "https://maps.googleapis.com/maps/api/staticmap?" +\
         f"center={center_x},{center_y}&key={KEY}&zoom={ZOOM_LEVEL}&"+\
-        "size=1020x1020&maptype=roadmap&format=PNG&"+\
+        f"size={IMAGE_RESOLUTION + CROP_PIXELS}x{IMAGE_RESOLUTION + CROP_PIXELS}&maptype=roadmap&format=PNG&"+\
         "style=feature:all|element:labels|visibility:off&"+\
         "style=feature:administrative|visibility:off&"+\
         "style=feature:landscape|visibility:off&"+\

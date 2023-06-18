@@ -4,10 +4,29 @@
 
 ### Requirements 
 
-Will put later!
+Partial requirements are added in:
+
+```bash
+conda env create --file environment.yml
+```
+
+if you want you can use pip to install them:
+
+```bash
+pip install -r requirements.txt
+```
+
+
 ### Usage
 
 Change Paths in ``utils/define.py``
+
+#### Craw GMAPS for curating dataset:
+You need a valid Google maps API key set as environment variable: `export GMAPS_KEY=YOUR_API_KEY`
+```bash
+python data-preprocessing/crawl_aerial_seg.py
+```
+
 
 Generate Image Fileset
 
