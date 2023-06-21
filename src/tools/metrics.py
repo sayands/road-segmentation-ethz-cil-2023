@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-def eval_metrics(pred, target, epsilon):
+def eval_metrics(pred, target, epsilon=1e-4):
     target = torch.squeeze(torch.argmax(target, dim=1))
     pred = torch.squeeze(torch.argmax(pred, dim=1))
 
@@ -15,8 +15,8 @@ def eval_metrics(pred, target, epsilon):
     recall = tp / (tp + fn + epsilon)
     f1_score = (2 * precision * recall) / (precision + recall + epsilon)
     
-    intersection = (pred * target).sum() + epsilon
-    union = pred.sum() + target.sum() - intersection + epsilon
+    intersection = (pred * target).sum().item() + epsilon
+    union = pred.sum().item() + target.sum().item() - intersection + epsilon
     mIoU = intersection / union
 
     return {

@@ -1,0 +1,30 @@
+seed        : 42
+num_workers : 4
+log_level   : INFO
+log_dir    : '/media/ankitaghosh/Data/ETH/CIL/project/experiments/' 
+data :
+  root_dir : /media/ankitaghosh/Data/ETH/CIL/project/seg-data
+
+train :
+  batch_size : 4
+  log_every  : 1
+  save_every : 1
+  epochs: 10
+
+validation:
+  batch_size: 4
+  valid_every: 1
+
+loss:
+  loss_type: "ce" #options: ce, dice, ftl, ce+dice, ce+ftl
+  wlambda: 0.5
+  alpha: 0.7
+  gamma: 1.5
+
+wandb:
+  wandb: true
+  entity: "cil-road-seg-2023"
+  project: "trial"
+  name: "trial_run_ce"
+  group: null
+  id : "trial_run_ce"

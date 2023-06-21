@@ -4,6 +4,7 @@ import sys
 import os
 import logging
 import json
+import datetime
 
 import numpy as np
 import torch
@@ -60,7 +61,9 @@ def train(config):
     trainer = Trainer(config, model, log_dir, device)
     # Setup wandb for logging
     if config["wandb"]["id"] is not None:
-        wandb_id = config["wandb"]["id"]
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+        wandb_id = f'{config["wandb"]["id"]}_{timestamp}' 
+
     else:
         wandb_id = wandb.util.generate_id()
         with open(os.path.join(log_dir, "wandb_id.txt"), "w+", encoding="UTF-8") as f:
@@ -83,15 +86,15 @@ def train(config):
     
     # Main training loop
     global_step = 0
-    for epoch in range(config["train"]["epochs"] + 1):
+    for epoch in range(1, config["train"]["epochs"] + 1):
         for data in train_loader:
             trainer.step(data, epoch)
             if global_step % config["train"]["log_every"] == 0:
-                trainer.log(global_step, epoch)
+                trainer.log(global_step, epoch, phase="train")
             global_step += 1
 
         if epoch % config["train"]["save_every"] == 0:
-            trainer.save_model(epoch)
+            trainer.save_model(epoch, wandb_id)
 
         if epoch % config["validation"]["valid_every"] == 0:
             trainer.validate(
@@ -99,6 +102,7 @@ def train(config):
                 img_shape,
                 step=global_step,
                 epoch=epoch)
+            trainer.log(global_step, epoch, phase="valid")
 
     wandb.finish()
     
