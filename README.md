@@ -18,9 +18,9 @@ python data-preprocessing/crawl_aerial_seg.py
 ```
 
 
-Generate Image Fileset
+Training Script
 
 ```bash
 cd src
-python train.py --config ../configs/base.yaml
+python train.py --config ../configs/base_ankita.yaml
 ```
