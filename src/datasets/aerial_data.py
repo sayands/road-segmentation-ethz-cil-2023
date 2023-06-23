@@ -35,7 +35,7 @@ class AerialSeg(Dataset):
                             ])
         
         self.val_transform = A.Compose([
-                                A.RandomCrop(width = cfg.augment.crop_size[0], height=cfg.augment.crop_size[1]),
+                                A.CenterCrop(width = cfg.augment.crop_size[0], height=cfg.augment.crop_size[1]),
                                 ToTensorV2(transpose_mask=True)])
         
         print('[INFO] Initialised {} Dataset.'.format(self.split))
