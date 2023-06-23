@@ -18,7 +18,7 @@ class AerialSeg(Dataset):
         self.data_root_dir = cfg.data.root_dir
         self.split = split
         self.is_training = True if self.split == 'training' else False
-        self.image_names = np.genfromtxt(osp.join(self.data_root_dir, '{}.txt'.format(self.split)) , dtype=str)[:100]
+        self.image_names = np.genfromtxt(osp.join(self.data_root_dir, '{}.txt'.format(self.split)) , dtype=str)
 
         self.image_ext = cfg.data.image_ext
         self.label_ext = cfg.data.label_ext

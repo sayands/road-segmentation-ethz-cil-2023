@@ -190,7 +190,6 @@ class Trainer(nn.Module):
                 seg_gt_to_save = (1 - seg_gt_to_save[..., 0]) * seg_gt_to_save[..., 1] 
                 seg_gt_to_save *= 255
                 
-                # TODO - @Ankita - save the image to wandb as you process (this should ideally be 2-channel output of scores) - current code faulty
                 seg_pred_to_save = seg_pred[0].cpu().numpy()
                 seg_pred_to_save = np.transpose(seg_pred_to_save, (1, 2, 0))
                 seg_pred_to_save = np.argmax(seg_pred_to_save, axis=2)
@@ -200,9 +199,9 @@ class Trainer(nn.Module):
                 wandb_seg_gt.append(wandb.Image(seg_gt_to_save))
                 wandb_seg_pred.append(wandb.Image(seg_pred_to_save))
         
-        wandb.log({"Images": wandb_img}, step=step)
         wandb.log({"Ground-truth Labels": wandb_seg_gt}, step=step)
         wandb.log({"Predicted Labels": wandb_seg_pred}, step=step)
+        wandb.log({"Images": wandb_img}, step=step)
 
         self.log_dict["total_iter_count"] = len(loader)
         

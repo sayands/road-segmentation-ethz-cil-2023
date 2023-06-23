@@ -1,19 +1,20 @@
 seed        : 42
 num_workers : 4
 log_level   : INFO
-log_dir    : '' 
+log_dir    : /local/home/sdebsarkar/Documents/code/course-projects/road-segmentation-ethz-cil-2023/src/output
 data :
-  root_dir : /Users/sayands/Documents/Work/Courses/Computational-Intelligence-Lab/Project/data/seg-data
+  root_dir : /media/sdebsarkar/extra-hdd/datasets/cil-road-seg-data/seg-data
 
 train :
   batch_size : 8
-  log_every  : 50
+  log_every  : 100
   save_every : 1
+  epochs     : 100
 
 wandb:
-  wandb: false
-  entity: ""
-  project: ""
-  name: ""
+  wandb: true
+  entity: "cil-road-seg-2023"
+  project: "trial"
+  name: "first_run_ce"
   group: null
-  id : null
+  id : "first_run_ce"
