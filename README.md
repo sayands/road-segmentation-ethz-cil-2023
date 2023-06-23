@@ -22,7 +22,7 @@ Training Script
 
 ```bash
 cd src
-python train.py --config ../configs/base_ankita.yaml
+python train.py --config ../configs/base.yaml
 ```
 
 `config loss params` are as follows:
