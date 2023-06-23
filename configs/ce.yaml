@@ -1,7 +1,7 @@
 seed        : 42
 num_workers : 4
 log_level   : INFO
-log_dir    : /local/home/sdebsarkar/Documents/code/course-projects/road-segmentation-ethz-cil-2023/src/output
+log_dir    : /local/home/sdebsarkar/Documents/code/course-projects/road-segmentation-ethz-cil-2023/src/output_ce
 data :
   root_dir : /media/sdebsarkar/extra-hdd/datasets/cil-road-seg-data/seg-data
 
@@ -15,9 +15,9 @@ wandb:
   wandb: true
   entity: "cil-road-seg-2023"
   project: "trial"
-  name: "first_run_ce"
+  name: "ce"
   group: null
-  id : "first_run_ce"
+  id : "ce"
 
 loss:
   loss_type: "ce" #options: ce, dice, ftl, ce+dice, ce+ftl
