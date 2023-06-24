@@ -16,11 +16,11 @@ validation:
   valid_every: 1
 
 loss:
-  loss_type: ["ce","ce+ftl", "ce+dice"] #options: ce, dice, ftl, ce+dice, ce+ftl
-  epochs: [1,2,5]
-  wlambda: [0.5,0.3,0.5]
-  alpha: [0.7,0.7,0.9]
-  gamma: [1.5,1.5,1.2]
+  loss_type: ["ce","ce+ftl", "ce+dice"] #["ce"] #options: ce, dice, ftl, ce+dice, ce+ftl
+  epochs: [1,2,5] #[5]
+  wlambda: [0.5,0.3,0.5] #[0.5]
+  alpha: [0.7,0.7,0.9] #[0.7]
+  gamma: [1.5,1.5,1.2] #[1.5]
 
 wandb:
   wandb: true
