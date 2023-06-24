@@ -28,3 +28,18 @@ python train.py --config ../configs/base.yaml
 - `wlambda`: activated when using ce+dice or ce+ftl loss_type. wlambda is the weightage given to cross-entropy loss. weightage of the other loss will be 1-wlambda.
 - `alpha`: activated when using ftl or ce+ftl loss type. This is a hyperparameter required in focal tversky loss. The higher the alpha value, the more the false negatives are penalised. Weightage to false positives is 1-alpha.
 - `gamma`: activated when using ftl or ce+ftl loss type. This is a hyperparameter required in focal tversky loss. Gamma is a parameter that controls the non-linearity of the loss. In the case of class imbalance, the FTL becomes useful when gamma > 1. Gamme < 1 is useful towards the end of training as the model is still incentivised to learn even though it is nearing convergence. 
+
+
+
+Testing Script
+
+```bash
+cd src
+python test.py --config ../configs/base_test.yaml
+```
+
+`config test params`:
+- `test_path` : path to folder with test imgaes
+- `submission_path` : path to submission file
+- `model_path` : path to the model file
+- `device` : cpu/cuda

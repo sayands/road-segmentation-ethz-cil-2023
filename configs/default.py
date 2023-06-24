@@ -57,6 +57,10 @@ _C.loss.wlambda = 0.5
 _C.loss.alpha = 0.7
 _C.loss.gamma = 1.5
 
+# testing params
+_C.test.test_path = ''
+_C.test.submission_path = ''
+_C.test.model_path = ''
 
 # inference
 _C.metrics = CN()
