@@ -1,10 +1,13 @@
 import argparse
 import logging
 import json
+import os
 
 import numpy as np
 import torch
 import cv2
+
+import segmentation_models_pytorch as smp
 
 import sys
 sys.path.append('..')
@@ -56,15 +59,19 @@ def masks_to_submission(submission_filename, mask_dir, *image_filenames):
             f.writelines('{}\n'.format(s) for s in mask_to_submission_strings(fn, mask_dir=mask_dir))
 
 def test(config):
-    # Load images
-    image_paths = open(config["test_path"]).read().strip().split("\n")
-
     # Load model
-    model = torch.load(config["model_path"]).to(config["device"])
+    model = smp.DeepLabV3Plus(encoder_name='resnet34', encoder_depth=5, encoder_weights='imagenet', 
+                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36), 
+                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
+    
+    model = model.load_state_dict(torch.load(config["test"]["model_path"]))
 
-    with open(config["submission_path"], 'w') as f:
+    os.makedirs(os.path.dirname(config["test"]["submission_path"]), exist_ok=True)
+    with open(config["test"]["submission_path"], 'w') as f:
         f.write('id, prediction\n')
-        for path in image_paths:
+
+        # Load and evaluate images
+        for path in os.listdir(config["test"]["test_path"]):
             # Set model to evaluation
             model.eval()
 
@@ -81,7 +88,7 @@ def test(config):
 
                 image = np.transpose(image, (2, 0, 1))
                 image = np.expand_dims(image, 0)
-                image = torch.from_numpy(image).to(config["device"])
+                image = torch.from_numpy(image).to(config["test"]["device"])
 
                 # make prediction
                 prediction_mask = model(image).squeeze()

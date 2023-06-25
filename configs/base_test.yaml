@@ -1,11 +1,10 @@
-
 log_level   : INFO
 log_dir    : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/experiments
 data :
   root_dir : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/seg-data
 
 test :
-  test_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/seg-data/test
-  submission_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/road-segmentation-ethz-cil-2023/submission
+  test_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/seg-data/test/images
+  submission_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/road-segmentation-ethz-cil-2023/submission/test_submit.csv
   model_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/model-weights/ce_100.pth
   device : 'cpu'
