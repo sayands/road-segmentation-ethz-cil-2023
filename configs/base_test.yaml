@@ -5,6 +5,7 @@ data :
 
 test :
   test_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/seg-data/test/images
+  mask_results_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/seg-data/mask_predictions
   submission_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/road-segmentation-ethz-cil-2023/submission/test_submit.csv
-  model_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/model-weights/ce_100.pth
+  model_path : /mnt/c/Users/siddh/Desktop/ETH_Main/SS2023/CIL/ProjectFiles/model-weights/ce_ftl_100.pth
   device : 'cpu'

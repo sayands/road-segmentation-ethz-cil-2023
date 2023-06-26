@@ -60,6 +60,7 @@ _C.loss.gamma = 1.5
 # testing params
 _C.test = CN()
 _C.test.test_path = ''
+_C.test.mask_results_path = ''
 _C.test.submission_path = ''
 _C.test.model_path = ''
 _C.test.device = 'cpu'
