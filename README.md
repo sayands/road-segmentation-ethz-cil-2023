@@ -40,6 +40,7 @@ python test.py --config ../configs/base_test.yaml
 
 `config test params`:
 - `test_path` : path to folder with test imgaes
+- `mask_results_path` : path to where the mask images should be stored
 - `submission_path` : path to submission file
 - `model_path` : path to the model file
 - `device` : cpu/cuda
