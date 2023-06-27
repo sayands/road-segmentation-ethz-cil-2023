@@ -33,7 +33,7 @@ def patch_to_label(patch):
 
 def mask_to_submission_strings(image_filename, mask_dir=None):
     """Reads a single image and outputs the strings that should go into the submission file"""
-    img_number = int(re.search(r"\d+", image_filename).group(0))
+    img_number = int(re.search(r"\d+", os.path.basename(image_filename)).group(0))
     im = PIL.Image.open(image_filename)
     im_arr = np.asarray(im)
     if len(im_arr.shape) > 2:
@@ -128,7 +128,7 @@ def main():
     cfg = update_config(config, args.config)
 
     # Runs the model over test set and saves the predicted mask images
-    test(cfg)
+    # test(cfg)
 
     # gets the predicted mask images and converts to submission
     image_filenames = [os.path.join(config["test"]["mask_results_path"], name) for name in os.listdir(config["test"]["mask_results_path"])]
