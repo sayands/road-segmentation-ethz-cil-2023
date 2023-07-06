@@ -57,7 +57,7 @@ def train(config):
     )
 
     # Initialise network and trainer
-    model = smp.DeepLabV3Plus(encoder_name='resnet34', encoder_depth=5, encoder_weights='imagenet',
+    model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet',
                               encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
                               in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
 

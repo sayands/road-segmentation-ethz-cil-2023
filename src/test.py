@@ -97,17 +97,17 @@ def avrg_mask(full_size_mask, stride):
 
 def test(config):
     # Load model
-    model = smp.DeepLabV3Plus(encoder_name='resnet34', encoder_depth=5, encoder_weights='imagenet',
+    model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet',
                               encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
-                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
+                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None).to(config["test"]["device"])
 
     model.load_state_dict((torch.load(config["test"]["model_path"]))['model'])
+    model.eval()
 
     # Load and evaluate images
     for path in tqdm.tqdm(os.listdir(config["test"]["test_path"])):
         im_path = os.path.join(os.path.abspath(config["test"]["test_path"]), path)
         # Set model to evaluation
-        model.eval()
 
         # No gradient tracking
         with torch.no_grad():
