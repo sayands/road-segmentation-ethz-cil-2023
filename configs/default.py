@@ -64,6 +64,7 @@ _C.test.mask_results_path = ''
 _C.test.submission_path = ''
 _C.test.model_path = ''
 _C.test.device = 'cpu'
+_C.test.stride = 1
 
 # inference
 _C.metrics = CN()

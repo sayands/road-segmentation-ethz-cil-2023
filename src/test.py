@@ -1,26 +1,25 @@
 import argparse
-import logging
-import json
 import os
 import re
-
-import numpy as np
-import torch
-import cv2
-import PIL
-from PIL import Image as im
-
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
-
-import segmentation_models_pytorch as smp
-
 import sys
+import tqdm
+
+import PIL
+import cv2
+import numpy as np
+import segmentation_models_pytorch as smp
+import torch
+import matplotlib.pyplot as plt
+
+
 sys.path.append('..')
 from configs import config, update_config
 
-foreground_threshold = 0.25 # percentage of pixels of val 255 required to assign a foreground label to a patch
+foreground_threshold = 0.25  # percentage of pixels of val 255 required to assign a foreground label to a patch
 img_number = -1
+
+WINDOW_SIZE = 256
+
 
 # assign a label to a patch
 def patch_to_label(patch):
@@ -30,6 +29,7 @@ def patch_to_label(patch):
         return 1
     else:
         return 0
+
 
 def mask_to_submission_strings(image_filename, mask_dir=None):
     """Reads a single image and outputs the strings that should go into the submission file"""
@@ -47,32 +47,64 @@ def mask_to_submission_strings(image_filename, mask_dir=None):
         for i in range(0, im_arr.shape[0], patch_size):
             patch = im_arr[i:i + patch_size, j:j + patch_size]
             label = patch_to_label(patch)
-            mask[i:i+patch_size, j:j+patch_size] = int(label*255)
-            yield("{:03d}_{}_{},{}".format(img_number, j, i, label))
+            mask[i:i + patch_size, j:j + patch_size] = int(label * 255)
+            yield ("{:03d}_{}_{},{}".format(img_number, j, i, label))
+
 
 #     if mask_dir:
 #         save_mask_as_img(mask, os.path.join(mask_dir, "mask_" + image_filename.split("/")[-1]))
-    
+
 
 def save_mask_as_img(img_arr, mask_filename):
     img = PIL.Image.fromarray(img_arr)
 
-    # Temporarily resizing image to 400x400 using nearest neighbor interpolation
-    img = img.resize((400,400), im.NEAREST)
-
     os.makedirs(os.path.dirname(mask_filename), exist_ok=True)
     img.save(mask_filename)
 
+
+def generate_starting_points(start_value, max_value, window_size, stride):
+    start_values = [w for w in range(start_value, max_value - window_size, stride)]
+    # if the stride skips on the very last bit of the image we should still look into it.
+    if max_value - window_size not in start_values:
+        start_values.append(max_value - window_size)
+    return start_values
+
+
+def generate_crops(image, stride):
+    height, width, _ = image.shape
+    start_heights = generate_starting_points(0, height, WINDOW_SIZE, stride)
+    start_widths = generate_starting_points(0, width, WINDOW_SIZE, stride)
+    if width - WINDOW_SIZE not in start_widths:
+        start_widths.append(width - WINDOW_SIZE)
+    for start_width in start_widths:
+        for start_height in start_heights:
+            yield start_height, start_width, image[start_width:start_width + WINDOW_SIZE,
+                                             start_height:start_height + WINDOW_SIZE, :]
+
+
+def avrg_mask(full_size_mask, stride):
+    height, width, _ = full_size_mask.shape
+
+    avrg_matrix = np.zeros((height, width, 1))
+
+    start_heights = generate_starting_points(0, height, WINDOW_SIZE, stride)
+    start_widths = generate_starting_points(0, width, WINDOW_SIZE, stride)
+    for height in start_heights:
+        for width in start_widths:
+            avrg_matrix[height:height + WINDOW_SIZE, width:width + WINDOW_SIZE] += 1
+    return full_size_mask / avrg_matrix
+
+
 def test(config):
     # Load model
-    model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet', 
-                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36), 
+    model = smp.DeepLabV3Plus(encoder_name='resnet34', encoder_depth=5, encoder_weights='imagenet',
+                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
                               in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
-    
+
     model.load_state_dict((torch.load(config["test"]["model_path"]))['model'])
 
     # Load and evaluate images
-    for path in os.listdir(config["test"]["test_path"]):
+    for path in tqdm.tqdm(os.listdir(config["test"]["test_path"])):
         im_path = os.path.join(os.path.abspath(config["test"]["test_path"]), path)
         # Set model to evaluation
         model.eval()
@@ -80,29 +112,31 @@ def test(config):
         # No gradient tracking
         with torch.no_grad():
             # Load image
-            image = cv2.imread(im_path)
-            image = image[:, :, [2, 1, 0]] # Convert to RGB
-            image = image.astype(np.float32)
-            image /= 255.0
+            full_size_image = cv2.imread(im_path)
+            full_size_image = full_size_image[:, :, [2, 1, 0]]  # Convert to RGB
+            full_size_image = full_size_image.astype(np.float32)
+            full_size_image /= 255.0
 
-            # Resize image
-            image = cv2.resize(image, (256, 256))
+            full_size_mask = np.zeros((*full_size_image.shape[:2], 2))
+            for start_height, start_width, image in generate_crops(full_size_image, config["test"]["stride"]):
+                image = np.transpose(image, (2, 0, 1))
+                image = np.expand_dims(image, 0)
+                image = torch.from_numpy(image).to(config["test"]["device"])
 
-            image = np.transpose(image, (2, 0, 1))
-            image = np.expand_dims(image, 0)
-            image = torch.from_numpy(image).to(config["test"]["device"])
+                # make prediction
+                prediction_mask = model(image)
 
-            # make prediction
-            prediction_mask = model(image)
+                prediction_mask = prediction_mask[0].cpu().numpy()
+                prediction_mask = np.transpose(prediction_mask, (1, 2, 0))
+                full_size_mask[start_width: start_width + WINDOW_SIZE, start_height:start_height + WINDOW_SIZE,:] += prediction_mask
 
-            prediction_mask = prediction_mask[0].cpu().numpy()
-            prediction_mask = np.transpose(prediction_mask, (1, 2, 0))
+            prediction_mask = avrg_mask(full_size_mask, config["test"]["stride"])
             prediction_mask = np.argmax(prediction_mask, axis=2)
             prediction_mask *= 255
             prediction_mask = prediction_mask.astype(np.uint8)
+            save_mask_as_img(prediction_mask,
+                             os.path.join(config["test"]["mask_results_path"], "mask_" + im_path.split("/")[-1]))
 
-            pred_mask = np.reshape(prediction_mask, (256,256))
-            save_mask_as_img(pred_mask, os.path.join(config["test"]["mask_results_path"], "mask_" + im_path.split("/")[-1]))
 
 def masks_to_submission(submission_filename, mask_dir, *image_filenames):
     os.makedirs(os.path.dirname(submission_filename), exist_ok=True)
@@ -112,27 +146,31 @@ def masks_to_submission(submission_filename, mask_dir, *image_filenames):
         for fn in image_filenames[0:]:
             f.writelines('{}\n'.format(s) for s in mask_to_submission_strings(fn, mask_dir=mask_dir))
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="CIL Project")
     parser.add_argument(
         "--config",
         type=str,
-        default="test.yaml",
+        default="../configs/base_test.yaml",
         help="Path to config file to replace defaults",
     )
     args = parser.parse_args()
-    return parser, args 
+    return parser, args
+
 
 def main():
     parser, args = parse_args()
     cfg = update_config(config, args.config)
 
     # Runs the model over test set and saves the predicted mask images
-    # test(cfg)
+    test(cfg)
 
     # gets the predicted mask images and converts to submission
-    image_filenames = [os.path.join(config["test"]["mask_results_path"], name) for name in os.listdir(config["test"]["mask_results_path"])]
+    image_filenames = [os.path.join(config["test"]["mask_results_path"], name) for name in
+                       os.listdir(config["test"]["mask_results_path"])]
     masks_to_submission(config["test"]["submission_path"], "", *image_filenames)
+
 
 if __name__ == '__main__':
     main()
