@@ -40,6 +40,8 @@ _C.validation.valid_every = 1
 
 # model param
 _C.model = CN()
+_C.model.type = 'DeepLabV3Plus' #Unet, PSPNet
+_C.model.encoder = 'efficientnet-b3' #resnet34, densenet169, xception, mobilenet_v2, vgg16
 
 # optim
 _C.optim = CN()
