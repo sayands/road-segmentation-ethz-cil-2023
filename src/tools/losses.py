@@ -32,7 +32,9 @@ class FocalTverskyLoss(nn.Module):
         self.alpha = alpha
         self.gamma = gamma
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred, y_true, alpha=-1, gamma=-1):
+        alpha = self.alpha if alpha == -1 else alpha
+        gamma = self.gamma if gamma == -1 else gamma
         y_pred = torch.sigmoid(y_pred)
 
         tp = (y_pred * y_true).sum()
@@ -40,8 +42,8 @@ class FocalTverskyLoss(nn.Module):
         fp = (y_pred * (1 - y_true)).sum()
 
         tversky = (tp + self.epsilon) / (
-            tp + self.alpha * fn + (1 - self.alpha) * fp + self.epsilon
+            tp + alpha * fn + (1 - alpha) * fp + self.epsilon
         )
-        loss = torch.pow((1 - tversky), self.gamma)
+        loss = torch.pow((1 - tversky), gamma)
 
         return loss

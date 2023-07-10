@@ -22,15 +22,10 @@ class Trainer(nn.Module):
         self.model = model.to(self.device)
         self.log_dir = log_dir
         self.log_dict = {}
-        self.log_phase = {"train": self.log_dict.copy(), "valid": self.log_dict.copy()}
 
-        # Loss functions
-        self.loss_ce = nn.CrossEntropyLoss()
-        self.loss_dice = DiceLoss()
-        if self.cfg["loss"]["loss_type"] == "ftl" or self.cfg["loss"]["loss_type"] == "ce+ftl":
-            self.loss_ftl = FocalTverskyLoss(alpha=self.cfg["loss"]["alpha"],
-                                             gamma=self.cfg["loss"]["gamma"])
-
+        self.log_phase = {"train" : self.log_dict.copy(), "valid": self.log_dict.copy()}
+        
+        self.init_loss()
         self.init_optimizer()
         self.init_log_dict()
 
@@ -41,6 +36,20 @@ class Trainer(nn.Module):
             lr=self.cfg.optim.lr,
             weight_decay=self.cfg.optim.weight_decay,
         )
+    
+    def init_loss(self):
+        self.loss_change = False if len(self.cfg["loss"]["epochs"]) == 1 else True
+        self.loss_type = self.cfg["loss"]["loss_type"][0]
+        self.loss_wlambda = self.cfg["loss"]["wlambda"][0]
+        self.loss_alpha = self.cfg["loss"]["alpha"][0]
+        self.loss_gamma = self.cfg["loss"]["gamma"][0]
+        self.loss_currpointer = 0
+        
+        self.loss_ce = nn.CrossEntropyLoss()
+        self.loss_dice = DiceLoss()
+        self.loss_ftl = FocalTverskyLoss(alpha=self.loss_alpha,
+                                             gamma=self.loss_gamma)
+
 
     def init_log_dict(self, phase="train"):
         """Custom log dict."""
@@ -67,46 +76,47 @@ class Trainer(nn.Module):
     def forward(self):
         """Forward pass of the network."""
         self.prediction = self.model(self.images)
-
-    def compute_loss(self, seg_pred, seg_gt, phase="train"):
+    def compute_loss(self, seg_pred, seg_gt, epoch, phase="train"):
         """Compute loss """
 
-        if phase == "train":
+        if self.loss_change and epoch > (self.cfg["loss"]["epochs"])[self.loss_currpointer]:
+            self.loss_currpointer += 1
+            self.loss_type = (self.cfg["loss"]["loss_type"])[self.loss_currpointer]
+            self.loss_wlambda = (self.cfg["loss"]["wlambda"])[self.loss_currpointer]
+            self.loss_alpha = (self.cfg["loss"]["alpha"])[self.loss_currpointer]
+            self.loss_gamma = (self.cfg["loss"]["gamma"])[self.loss_currpointer]
+
+        if phase=="train":
             self.log_dict = self.log_phase["train"]
         elif phase == "valid":
             self.log_dict = self.log_phase["valid"]
-
-        loss_type = self.cfg["loss"]["loss_type"]
-        if loss_type == 'ce':
+        if self.loss_type == 'ce':
             loss = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
             self.log_dict["ce_loss"] += loss.item()
-        elif loss_type == 'dice':
+        elif self.loss_type == 'dice':
             loss = self.loss_dice(seg_pred, seg_gt)
             self.log_dict["dice_loss"] += loss.item()
-        elif loss_type == 'ftl':
-            loss = self.loss_ftl(seg_pred, seg_gt)
+        elif self.loss_type == 'ftl':
+            loss = self.loss_ftl(seg_pred, seg_gt, self.loss_alpha, self.loss_gamma)
             self.log_dict["ftl_loss"] += loss.item()
-        elif loss_type == 'ce+dice':
+        elif self.loss_type == 'ce+dice':
             loss_ce = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
             self.log_dict["ce_loss"] += loss_ce.item()
             loss_dice = self.loss_dice(seg_pred, seg_gt)
             self.log_dict["dice_loss"] += loss_dice.item()
-            loss = (loss_ce * self.cfg["loss"]["wlambda"]) + (
-                    loss_dice * (1 - self.cfg["loss"]["wlambda"]))
-        elif loss_type == 'ce+ftl':
+            loss = (loss_ce * self.loss_wlambda) + (loss_dice * (1-self.loss_wlambda))
+        elif self.loss_type == 'ce+ftl':
             loss_ce = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
             self.log_dict["ce_loss"] += loss_ce.item()
-            loss_ftl = self.loss_ftl(seg_pred, seg_gt)
+            loss_ftl = self.loss_ftl(seg_pred, seg_gt, self.loss_alpha, self.loss_gamma)
             self.log_dict["ftl_loss"] += loss_ftl.item()
-            loss = (loss_ce * self.cfg["loss"]["wlambda"]) + (
-                    loss_ftl * (1 - self.cfg["loss"]["wlambda"]))
-
+            loss = (loss_ce * self.loss_wlambda) + (loss_ftl * (1-self.loss_wlambda))
         return loss
 
     def backward(self):
         """Backward pass of the network."""
         # Compute loss
-        loss = self.compute_loss(self.prediction, self.seg_gt)
+        loss = self.compute_loss(self.prediction, self.seg_gt, self.epoch)
         self.log_dict['total_loss'] += loss.item()
         metrics = eval_metrics(self.prediction, self.seg_gt)
         for k in self.log_dict.keys():
@@ -167,7 +177,7 @@ class Trainer(nn.Module):
                 seg_gt = data["groundtruth"].to(self.device)
 
                 seg_pred = self.model(images)
-                valid_loss = self.compute_loss(seg_pred, seg_gt, phase="valid")
+                valid_loss = self.compute_loss(seg_pred, seg_gt, epoch, phase="valid")
                 self.log_dict['total_loss'] += valid_loss
                 metrics = eval_metrics(seg_pred, seg_gt)
                 for k in self.log_dict.keys():

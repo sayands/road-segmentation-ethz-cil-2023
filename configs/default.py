@@ -52,10 +52,11 @@ _C.optim.grad_acc_steps = 1
 
 # loss
 _C.loss = CN()
-_C.loss.loss_type = "ce"
-_C.loss.wlambda = 0.5
-_C.loss.alpha = 0.7
-_C.loss.gamma = 1.5
+_C.loss.loss_type = ["ce"]
+_C.loss.epochs = [100]
+_C.loss.wlambda = [0.5]
+_C.loss.alpha = [0.7]
+_C.loss.gamma = [1.5]
 
 # testing params
 _C.test = CN()
