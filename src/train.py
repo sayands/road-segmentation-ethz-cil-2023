@@ -1,6 +1,5 @@
 import argparse
 import random
-import sys
 import os
 import logging
 import json
@@ -14,28 +13,32 @@ import segmentation_models_pytorch as smp
 import wandb
 
 import sys
-sys.path.append('..')
+
 from utils import common
 from configs import config, update_config
 
 from src.datasets.aerial_data import AerialSeg
 from src.tools.trainer import Trainer
 
+
+sys.path.append('..')
+
+
 def train(config):
     # Set random seed.
     random.seed(config.seed)
     np.random.seed(config.seed)
     torch.manual_seed(config.seed)
-    
+
     log_dir = config.log_dir
     common.ensure_dir(log_dir)
-    
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+
     # Initialise dataset and dataloader
     train_dataset = AerialSeg(config, split='training')
     valid_dataset = AerialSeg(config, split='validation')
-    
+
     img_shape = train_dataset.img_shape
     train_loader = DataLoader(
         dataset=train_dataset,
@@ -44,7 +47,7 @@ def train(config):
         num_workers=config["num_workers"],
         pin_memory=True,
     )
-    
+
     valid_loader = DataLoader(
         dataset=valid_dataset,
         batch_size=config["validation"]["batch_size"],
@@ -52,17 +55,18 @@ def train(config):
         num_workers=0,
         pin_memory=True,
     )
-    
-    # Initialise network and trainer: efficientnet-b3, resnet34
-    model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet', 
-                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36), 
+
+
+    # Initialise network and trainer
+    model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet',
+                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
                               in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
-    
+
     trainer = Trainer(config, model, log_dir, device)
     # Setup wandb for logging
     if config["wandb"]["id"] is not None:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
-        wandb_id = f'{config["wandb"]["id"]}_{timestamp}' 
+        wandb_id = f'{config["wandb"]["id"]}_{timestamp}'
 
     else:
         wandb_id = wandb.util.generate_id()
@@ -83,7 +87,7 @@ def train(config):
         dir=log_dir,
     )
     wandb.watch(model)
-    
+
     # Main training loop
     global_step = 0
     for epoch in range(1, config["train"]["epochs"] + 1):
@@ -105,24 +109,24 @@ def train(config):
             trainer.log(global_step, epoch, phase="valid")
 
     wandb.finish()
-    
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="CIL Project")
     parser.add_argument(
         "--config",
         type=str,
-        default="train.yaml",
+        default="../configs/base.yaml",
         help="Path to config file to replace defaults",
     )
     args = parser.parse_args()
-    return parser, args   
-    
+    return parser, args
+
 
 def main():
     parser, args = parse_args()
     cfg = update_config(config, args.config)
-    
+
     handlers = [logging.StreamHandler(sys.stdout)]
     logging.basicConfig(
         level=config["log_level"],
@@ -131,8 +135,9 @@ def main():
     )
     message = json.dumps(cfg, indent=4)
     logging.info(f"Info: \n{message}")
-    
+
     train(cfg)
+
 
 if __name__ == '__main__':
     main()

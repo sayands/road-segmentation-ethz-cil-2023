@@ -58,6 +58,14 @@ _C.loss.wlambda = [0.5]
 _C.loss.alpha = [0.7]
 _C.loss.gamma = [1.5]
 
+# testing params
+_C.test = CN()
+_C.test.test_path = ''
+_C.test.mask_results_path = ''
+_C.test.submission_path = ''
+_C.test.model_path = ''
+_C.test.device = 'cpu'
+_C.test.stride = 1
 
 # inference
 _C.metrics = CN()
