@@ -61,22 +61,27 @@ def save_mask_as_img(img_arr, mask_filename):
     img.save(mask_filename)
 
 
-def pad_image(image, start_widths, start_heights):
+def pad_image(image, start_widths, auto_pad, padding):
     height, width, rgb = image.shape
+    if auto_pad is False:
+        padded_width = width + 2 * padding
+        padded_height = height + 2 * padding
+    else:
+        padding = (start_widths[-1] + WINDOW_SIZE - width) // 2
 
-    padding_width = start_widths[-1] + WINDOW_SIZE - width
-    padding_height = start_heights[-1] + WINDOW_SIZE - height
+        padded_width = width + 2 * padding
+        padded_height = height + 2 * padding
 
-    new_width = width + padding_width
-    new_height = height + padding_height
-
-    padded_image = np.zeros((new_height, new_width, rgb)).astype(np.float32)
-    padded_image[:height, :width] = image
-    return padded_image
+    padded_image = np.zeros((padded_width, padded_height, rgb)).astype(np.float32)
+    padded_image[padding:padding+height, padding:padding+width] = image
+    return padding, padded_image
 
 
-def generate_starting_points(start_value, max_value, stride):
-    return [w for w in range(start_value, max_value, stride)]
+def generate_starting_points(max_value, stride):
+    points = [0]
+    while points[-1] + WINDOW_SIZE < max_value:
+        points.append(points[-1] + stride)
+    return points
 
 
 def generate_crops(image, start_widths, start_heights):
@@ -92,21 +97,21 @@ def avrg_mask(full_size_mask, stride, height, width):
 
     avrg_matrix = np.zeros((full_size_mask.shape[0], full_size_mask.shape[1], 1))
 
-    start_heights = generate_starting_points(0, height, stride)
-    start_widths = generate_starting_points(0, width, stride)
+    start_heights = generate_starting_points(height, stride)
+    start_widths = generate_starting_points(width, stride)
     for height in start_heights:
         for width in start_widths:
             avrg_matrix[height:height + WINDOW_SIZE, width:width + WINDOW_SIZE] += 1
     return full_size_mask / avrg_matrix
 
 
-def get_mask(full_mask, stride, original_image_x, original_image_y):
+def get_mask(full_mask, stride, padding, original_image_x, original_image_y):
     prediction_mask = avrg_mask(full_mask, stride, original_image_x, original_image_y)
     prediction_mask = np.argmax(prediction_mask, axis=2)
     prediction_mask *= 255
     prediction_mask = prediction_mask.astype(np.uint8)
     # remove the padding
-    return prediction_mask[:original_image_x, :original_image_y]
+    return prediction_mask[padding:padding+original_image_x, padding:padding+original_image_y]
 
 
 def test(config):
@@ -134,10 +139,11 @@ def test(config):
 
             stride = config["test"]["stride"]
 
-            start_heights = generate_starting_points(0, original_image.shape[0], stride)
-            start_widths = generate_starting_points(0,  original_image.shape[1], stride)
+            start_heights = generate_starting_points(original_image.shape[0], stride)
+            start_widths = generate_starting_points(original_image.shape[1], stride)
 
-            padded_image = pad_image(original_image, start_widths, start_heights)
+            padding, padded_image = pad_image(original_image, start_widths, config["test"]["auto_padding"],
+                                     config["test"]["padding"])
             full_size_mask = np.zeros((*padded_image.shape[:2], 2))
 
             for start_height, start_width, image in generate_crops(padded_image, start_widths, start_heights):
@@ -153,7 +159,7 @@ def test(config):
                 full_size_mask[start_width: start_width + WINDOW_SIZE, start_height:start_height + WINDOW_SIZE,
                 :] += prediction_mask
 
-            prediction_mask = get_mask(full_size_mask, stride, original_image.shape[0], original_image.shape[1])
+            prediction_mask = get_mask(full_size_mask, stride, padding, original_image.shape[0], original_image.shape[1])
             save_mask_as_img(prediction_mask,
                              os.path.join(config["test"]["mask_results_path"], "mask_" + im_path.split("/")[-1]))
 
