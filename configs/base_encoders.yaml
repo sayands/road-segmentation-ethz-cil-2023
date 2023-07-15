@@ -1,9 +1,9 @@
 seed        : 42
 num_workers : 4
 log_level   : INFO
-log_dir    : '/media/ankitaghosh/Data/ETH/CIL/project/experiments/' 
+log_dir    : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output
 data :
-  root_dir : /media/ankitaghosh/Data/ETH/CIL/project/seg-data
+  root_dir : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data
 
 train :
   batch_size : 4

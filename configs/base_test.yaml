@@ -5,10 +5,10 @@ data :
 
 test :
   test_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/test/images
-  mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/results_16
-  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/ivan_be_running_baby_2023-07-05__19-38-12/submission/test_submit_stride_16.csv
+  mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/results_256
+  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/ivan_be_running_baby_2023-07-05__19-38-12/submission/test_submit_stride_256.csv
   model_path : /home/ivan/Downloads/ce_ftl_100.pth
   device : 'cuda'
-  stride: 16
+  stride: 256
   auto_padding: True
   padding: 0

@@ -1,0 +1,31 @@
+seed        : 42
+num_workers : 4
+log_level   : INFO
+log_dir     : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output
+data :
+  root_dir  : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data
+
+train :
+  batch_size : 64
+  log_every  : 50
+  save_every : 1
+  epochs: 5
+
+validation:
+  batch_size: 256
+  valid_every: 1
+
+loss:
+  loss_type: ["ce","ce+ftl", "ce+dice"] #["ce"] #options: ce, dice, ftl, ce+dice, ce+ftl
+  epochs: [1,2,5] #[5]
+  wlambda: [0.5,0.3,0.5] #[0.5]
+  alpha: [0.7,0.7,0.9] #[0.7]
+  gamma: [1.5,1.5,1.2] #[1.5]
+
+wandb:
+  wandb: true
+  entity: "cil-road-seg-2023"
+  project: "trial"
+  name: "trial_run_multiloss"
+  group: null
+  id : "trial_run_multiloss"

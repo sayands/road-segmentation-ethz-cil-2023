@@ -1,7 +1,7 @@
 seed        : 42
-Fixes onnum_workers : 8
+num_workers : 8
 log_level   : INFO
-log_dir    : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output
+log_dir     : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output
 data :
   root_dir : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data
 
