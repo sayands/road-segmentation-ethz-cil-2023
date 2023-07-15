@@ -11,7 +11,6 @@ import segmentation_models_pytorch as smp
 import torch
 import matplotlib.pyplot as plt
 
-
 sys.path.append('..')
 from configs import config, update_config
 
@@ -62,44 +61,65 @@ def save_mask_as_img(img_arr, mask_filename):
     img.save(mask_filename)
 
 
-def generate_starting_points(start_value, max_value, window_size, stride):
-    start_values = [w for w in range(start_value, max_value - window_size, stride)]
-    # if the stride skips on the very last bit of the image we should still look into it.
-    if max_value - window_size not in start_values:
-        start_values.append(max_value - window_size)
-    return start_values
+def pad_image(image, start_widths, auto_pad, padding):
+    height, width, rgb = image.shape
+    if auto_pad is False:
+        padded_width = width + 2 * padding
+        padded_height = height + 2 * padding
+    else:
+        padding = (start_widths[-1] + WINDOW_SIZE - width) // 2
+
+        padded_width = width + 2 * padding
+        padded_height = height + 2 * padding
+
+    padded_image = np.zeros((padded_width, padded_height, rgb)).astype(np.float32)
+    padded_image[padding:padding+height, padding:padding+width] = image
+    return padding, padded_image
 
 
-def generate_crops(image, stride):
+def generate_starting_points(max_value, stride):
+    points = [0]
+    while points[-1] + WINDOW_SIZE < max_value:
+        points.append(points[-1] + stride)
+    return points
+
+
+def generate_crops(image, start_widths, start_heights):
     height, width, _ = image.shape
-    start_heights = generate_starting_points(0, height, WINDOW_SIZE, stride)
-    start_widths = generate_starting_points(0, width, WINDOW_SIZE, stride)
-    if width - WINDOW_SIZE not in start_widths:
-        start_widths.append(width - WINDOW_SIZE)
+
     for start_width in start_widths:
         for start_height in start_heights:
             yield start_height, start_width, image[start_width:start_width + WINDOW_SIZE,
-                                             start_height:start_height + WINDOW_SIZE, :]
+                                                   start_height:start_height + WINDOW_SIZE, :]
 
 
-def avrg_mask(full_size_mask, stride):
-    height, width, _ = full_size_mask.shape
+def avrg_mask(full_size_mask, stride, height, width):
 
-    avrg_matrix = np.zeros((height, width, 1))
+    avrg_matrix = np.zeros((full_size_mask.shape[0], full_size_mask.shape[1], 1))
 
-    start_heights = generate_starting_points(0, height, WINDOW_SIZE, stride)
-    start_widths = generate_starting_points(0, width, WINDOW_SIZE, stride)
+    start_heights = generate_starting_points(height, stride)
+    start_widths = generate_starting_points(width, stride)
     for height in start_heights:
         for width in start_widths:
             avrg_matrix[height:height + WINDOW_SIZE, width:width + WINDOW_SIZE] += 1
     return full_size_mask / avrg_matrix
 
 
+def get_mask(full_mask, stride, padding, original_image_x, original_image_y):
+    prediction_mask = avrg_mask(full_mask, stride, original_image_x, original_image_y)
+    prediction_mask = np.argmax(prediction_mask, axis=2)
+    prediction_mask *= 255
+    prediction_mask = prediction_mask.astype(np.uint8)
+    # remove the padding
+    return prediction_mask[padding:padding+original_image_x, padding:padding+original_image_y]
+
+
 def test(config):
     # Load model
     model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet',
                               encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
-                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None).to(config["test"]["device"])
+                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None).to(
+        config["test"]["device"])
 
     model.load_state_dict((torch.load(config["test"]["model_path"]))['model'])
     model.eval()
@@ -112,13 +132,21 @@ def test(config):
         # No gradient tracking
         with torch.no_grad():
             # Load image
-            full_size_image = cv2.imread(im_path)
-            full_size_image = full_size_image[:, :, [2, 1, 0]]  # Convert to RGB
-            full_size_image = full_size_image.astype(np.float32)
-            full_size_image /= 255.0
+            original_image = cv2.imread(im_path)
+            original_image = original_image[:, :, [2, 1, 0]]  # Convert to RGB
+            original_image = original_image.astype(np.float32)
+            original_image /= 255.0
 
-            full_size_mask = np.zeros((*full_size_image.shape[:2], 2))
-            for start_height, start_width, image in generate_crops(full_size_image, config["test"]["stride"]):
+            stride = config["test"]["stride"]
+
+            start_heights = generate_starting_points(original_image.shape[0], stride)
+            start_widths = generate_starting_points(original_image.shape[1], stride)
+
+            padding, padded_image = pad_image(original_image, start_widths, config["test"]["auto_padding"],
+                                     config["test"]["padding"])
+            full_size_mask = np.zeros((*padded_image.shape[:2], 2))
+
+            for start_height, start_width, image in generate_crops(padded_image, start_widths, start_heights):
                 image = np.transpose(image, (2, 0, 1))
                 image = np.expand_dims(image, 0)
                 image = torch.from_numpy(image).to(config["test"]["device"])
@@ -128,12 +156,10 @@ def test(config):
 
                 prediction_mask = prediction_mask[0].cpu().numpy()
                 prediction_mask = np.transpose(prediction_mask, (1, 2, 0))
-                full_size_mask[start_width: start_width + WINDOW_SIZE, start_height:start_height + WINDOW_SIZE,:] += prediction_mask
+                full_size_mask[start_width: start_width + WINDOW_SIZE, start_height:start_height + WINDOW_SIZE,
+                :] += prediction_mask
 
-            prediction_mask = avrg_mask(full_size_mask, config["test"]["stride"])
-            prediction_mask = np.argmax(prediction_mask, axis=2)
-            prediction_mask *= 255
-            prediction_mask = prediction_mask.astype(np.uint8)
+            prediction_mask = get_mask(full_size_mask, stride, padding, original_image.shape[0], original_image.shape[1])
             save_mask_as_img(prediction_mask,
                              os.path.join(config["test"]["mask_results_path"], "mask_" + im_path.split("/")[-1]))
 

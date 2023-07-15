@@ -68,6 +68,8 @@ _C.test.submission_path = ''
 _C.test.model_path = ''
 _C.test.device = 'cpu'
 _C.test.stride = 1
+_C.test.auto_padding = False
+_C.test.padding = 0
 
 # inference
 _C.metrics = CN()
