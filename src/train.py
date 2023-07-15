@@ -1,6 +1,5 @@
 import argparse
 import random
-import sys
 import os
 import logging
 import json
@@ -18,6 +17,7 @@ import sys
 sys.path.append('..')
 from utils import common
 from configs import config, update_config
+from transformers import SamModel, SamProcessor
 
 from src.datasets.aerial_data import AerialSeg
 from src.tools.trainer import Trainer
@@ -56,10 +56,15 @@ def train(config):
     )
 
     # Initialise network and trainer
-    encoder_name = config["model"]["encoder"]
-    model = smp.DeepLabV3Plus(encoder_name=encoder_name, encoder_depth=5, encoder_weights='imagenet',
-                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
-                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
+    # encoder_name = config["model"]["encoder"]
+    model = SamModel.from_pretrained("facebook/sam-vit-huge")
+    for name, param in model.named_parameters():
+        if name.startswith("vision_encoder") or name.startswith("prompt_encoder"):
+            param.requires_grad_(False)
+
+    # model = smp.DeepLabV3Plus(encoder_name=encoder_name, encoder_depth=5, encoder_weights='imagenet',
+    #                           encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
+    #                           in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
 
     trainer = Trainer(config, model, log_dir, device)
     # Setup wandb for logging
