@@ -11,6 +11,8 @@ import segmentation_models_pytorch as smp
 import torch
 import matplotlib.pyplot as plt
 
+from src.model.sam_model import SAM
+
 sys.path.append('..')
 from configs import config, update_config
 
@@ -73,7 +75,7 @@ def pad_image(image, start_widths, auto_pad, padding):
         padded_height = height + 2 * padding
 
     padded_image = np.zeros((padded_width, padded_height, rgb)).astype(np.float32)
-    padded_image[padding:padding+height, padding:padding+width] = image
+    padded_image[padding:padding + height, padding:padding + width] = image
     return padding, padded_image
 
 
@@ -90,11 +92,10 @@ def generate_crops(image, start_widths, start_heights):
     for start_width in start_widths:
         for start_height in start_heights:
             yield start_height, start_width, image[start_width:start_width + WINDOW_SIZE,
-                                                   start_height:start_height + WINDOW_SIZE, :]
+                                             start_height:start_height + WINDOW_SIZE, :]
 
 
 def avrg_mask(full_size_mask, stride, height, width):
-
     avrg_matrix = np.zeros((full_size_mask.shape[0], full_size_mask.shape[1], 1))
 
     start_heights = generate_starting_points(height, stride)
@@ -111,15 +112,16 @@ def get_mask(full_mask, stride, padding, original_image_x, original_image_y):
     prediction_mask *= 255
     prediction_mask = prediction_mask.astype(np.uint8)
     # remove the padding
-    return prediction_mask[padding:padding+original_image_x, padding:padding+original_image_y]
+    return prediction_mask[padding:padding + original_image_x, padding:padding + original_image_y]
 
 
 def test(config):
     # Load model
-    model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet',
-                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
-                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None).to(
-        config["test"]["device"])
+    model = SAM().to(config["test"]["device"])
+    # model = smp.DeepLabV3Plus(encoder_name='efficientnet-b3', encoder_depth=5, encoder_weights='imagenet',
+    #                           encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
+    #                           in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None).to(
+    #     config["test"]["device"])
 
     model.load_state_dict((torch.load(config["test"]["model_path"]))['model'])
     model.eval()
@@ -143,8 +145,8 @@ def test(config):
             start_widths = generate_starting_points(original_image.shape[1], stride)
 
             padding, padded_image = pad_image(original_image, start_widths, config["test"]["auto_padding"],
-                                     config["test"]["padding"])
-            full_size_mask = np.zeros((*padded_image.shape[:2], 2))
+                                              config["test"]["padding"])
+            full_size_mask = np.zeros(padded_image.shape[:2])
 
             for start_height, start_width, image in generate_crops(padded_image, start_widths, start_heights):
                 image = np.transpose(image, (2, 0, 1))
@@ -154,10 +156,10 @@ def test(config):
                 # make prediction
                 prediction_mask = model(image)
 
-                prediction_mask = prediction_mask[0].cpu().numpy()
-                prediction_mask = np.transpose(prediction_mask, (1, 2, 0))
-                full_size_mask[start_width: start_width + WINDOW_SIZE, start_height:start_height + WINDOW_SIZE,
-                :] += prediction_mask
+                prediction_mask = prediction_mask.cpu().numpy()
+                # print(prediction_mask)
+                # prediction_mask = np.transpose(prediction_mask, (1, 2, 0))
+                full_size_mask[start_width: start_width + WINDOW_SIZE, start_height:start_height + WINDOW_SIZE] += prediction_mask
 
             prediction_mask = get_mask(full_size_mask, stride, padding, original_image.shape[0], original_image.shape[1])
             save_mask_as_img(prediction_mask,

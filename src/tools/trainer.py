@@ -23,8 +23,8 @@ class Trainer(nn.Module):
         self.log_dir = log_dir
         self.log_dict = {}
 
-        self.log_phase = {"train" : self.log_dict.copy(), "valid": self.log_dict.copy()}
-        
+        self.log_phase = {"train": self.log_dict.copy(), "valid": self.log_dict.copy()}
+
         self.init_loss()
         self.init_optimizer()
         self.init_log_dict()
@@ -36,7 +36,7 @@ class Trainer(nn.Module):
             lr=self.cfg.optim.lr,
             weight_decay=self.cfg.optim.weight_decay,
         )
-    
+
     def init_loss(self):
         self.loss_change = False if len(self.cfg["loss"]["epochs"]) == 1 else True
         self.loss_type = self.cfg["loss"]["loss_type"][0]
@@ -44,12 +44,11 @@ class Trainer(nn.Module):
         self.loss_alpha = self.cfg["loss"]["alpha"][0]
         self.loss_gamma = self.cfg["loss"]["gamma"][0]
         self.loss_currpointer = 0
-        
+
         self.loss_ce = nn.CrossEntropyLoss()
         self.loss_dice = DiceLoss()
         self.loss_ftl = FocalTverskyLoss(alpha=self.loss_alpha,
-                                             gamma=self.loss_gamma)
-
+                                         gamma=self.loss_gamma)
 
     def init_log_dict(self, phase="train"):
         """Custom log dict."""
@@ -76,6 +75,7 @@ class Trainer(nn.Module):
     def forward(self):
         """Forward pass of the network."""
         self.prediction = self.model(self.images)
+
     def compute_loss(self, seg_pred, seg_gt, epoch, phase="train"):
         """Compute loss """
 
@@ -86,12 +86,13 @@ class Trainer(nn.Module):
             self.loss_alpha = (self.cfg["loss"]["alpha"])[self.loss_currpointer]
             self.loss_gamma = (self.cfg["loss"]["gamma"])[self.loss_currpointer]
 
-        if phase=="train":
+        arg_max = torch.squeeze(torch.argmax(seg_gt, dim=1)).to(torch.float).cuda()
+        if phase == "train":
             self.log_dict = self.log_phase["train"]
         elif phase == "valid":
             self.log_dict = self.log_phase["valid"]
         if self.loss_type == 'ce':
-            loss = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
+            loss = self.loss_ce(seg_pred, arg_max)
             self.log_dict["ce_loss"] += loss.item()
         elif self.loss_type == 'dice':
             loss = self.loss_dice(seg_pred, seg_gt)
@@ -100,17 +101,17 @@ class Trainer(nn.Module):
             loss = self.loss_ftl(seg_pred, seg_gt, self.loss_alpha, self.loss_gamma)
             self.log_dict["ftl_loss"] += loss.item()
         elif self.loss_type == 'ce+dice':
-            loss_ce = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
+            loss_ce = self.loss_ce(seg_pred, arg_max)
             self.log_dict["ce_loss"] += loss_ce.item()
             loss_dice = self.loss_dice(seg_pred, seg_gt)
             self.log_dict["dice_loss"] += loss_dice.item()
-            loss = (loss_ce * self.loss_wlambda) + (loss_dice * (1-self.loss_wlambda))
+            loss = (loss_ce * self.loss_wlambda) + (loss_dice * (1 - self.loss_wlambda))
         elif self.loss_type == 'ce+ftl':
-            loss_ce = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
+            loss_ce = self.loss_ce(seg_pred, arg_max)
             self.log_dict["ce_loss"] += loss_ce.item()
             loss_ftl = self.loss_ftl(seg_pred, seg_gt, self.loss_alpha, self.loss_gamma)
             self.log_dict["ftl_loss"] += loss_ftl.item()
-            loss = (loss_ce * self.loss_wlambda) + (loss_ftl * (1-self.loss_wlambda))
+            loss = (loss_ce * self.loss_wlambda) + (loss_ftl * (1 - self.loss_wlambda))
         return loss
 
     def backward(self):
@@ -138,10 +139,12 @@ class Trainer(nn.Module):
         self.log_dict["total_iter_count"] += 1
         self.log_dict["image_count"] += self.images.shape[0]
 
-    def log(self, step, epoch, phase):
+    def log(self, step, epoch, phase, total_steps=None):
+        if total_steps == None:
+            total_steps = 'Not known'
         """Log the training information."""
         self.log_dict = self.log_phase[phase]
-        log_text = f"PHASE: {phase}, STEP {step} - EPOCH {epoch}/{self.cfg['train']['epochs']}"
+        log_text = f"PHASE: {phase}, STEP {step}/{total_steps} - EPOCH {epoch}/{self.cfg['train']['epochs']}"
         for k in self.log_dict.keys():
             if "loss" in k or "metric" in k:
                 self.log_dict[k] /= self.log_dict["total_iter_count"]
@@ -194,11 +197,12 @@ class Trainer(nn.Module):
                 seg_gt_to_save = (1 - seg_gt_to_save[..., 0]) * seg_gt_to_save[..., 1]
                 seg_gt_to_save *= 255
 
-                seg_pred_to_save = seg_pred[0].cpu().numpy()
-                seg_pred_to_save = np.transpose(seg_pred_to_save, (1, 2, 0))
-                seg_pred_to_save = np.argmax(seg_pred_to_save, axis=2)
-                seg_pred_to_save *= 255
-
+                seg_pred_to_save = seg_pred.cpu().numpy()
+                # seg_pred_to_save = np.transpose(seg_pred_to_save, (1, 2, 0))
+                # seg_pred_to_save = np.squeeze(np.argmax(seg_pred_to_save, keepdims=True))
+                seg_pred_to_save[seg_pred_to_save > 0.5] = 255
+                seg_pred_to_save[seg_pred_to_save < 255] = 0
+                # seg_pred_to_save = np.array([seg_pred_to_save, seg_pred_to_save, seg_pred_to_save])
                 wandb_img.append(wandb.Image(img_to_save))
                 wandb_seg_gt.append(wandb.Image(seg_gt_to_save))
                 wandb_seg_pred.append(wandb.Image(seg_pred_to_save))

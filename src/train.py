@@ -17,7 +17,8 @@ import sys
 sys.path.append('..')
 from utils import common
 from configs import config, update_config
-from transformers import SamModel, SamProcessor
+
+from model.sam_model import SamModel, SAM
 
 from src.datasets.aerial_data import AerialSeg
 from src.tools.trainer import Trainer
@@ -39,6 +40,7 @@ def train(config):
     valid_dataset = AerialSeg(config, split='validation')
 
     img_shape = train_dataset.img_shape
+
     train_loader = DataLoader(
         dataset=train_dataset,
         batch_size=config["train"]["batch_size"],
@@ -55,13 +57,12 @@ def train(config):
         pin_memory=True,
     )
 
+    train_total_steps = len(train_loader)
+    valid_total_steps = len(valid_loader)
+    model = SAM()
     # Initialise network and trainer
     # encoder_name = config["model"]["encoder"]
-    model = SamModel.from_pretrained("facebook/sam-vit-huge")
-    for name, param in model.named_parameters():
-        if name.startswith("vision_encoder") or name.startswith("prompt_encoder"):
-            param.requires_grad_(False)
-
+    #
     # model = smp.DeepLabV3Plus(encoder_name=encoder_name, encoder_depth=5, encoder_weights='imagenet',
     #                           encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
     #                           in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
@@ -98,7 +99,7 @@ def train(config):
         for data in train_loader:
             trainer.step(data, epoch)
             if global_step % config["train"]["log_every"] == 0:
-                trainer.log(global_step, epoch, phase="train")
+                trainer.log(global_step, epoch, phase="train", total_steps=train_total_steps)
             global_step += 1
 
         if epoch % config["train"]["save_every"] == 0:
@@ -120,7 +121,7 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        default="../configs/base_ankita.yaml",
+        default="../configs/base_ivan.yaml",
         help="Path to config file to replace defaults",
     )
     args = parser.parse_args()
