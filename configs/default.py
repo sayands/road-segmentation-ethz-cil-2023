@@ -70,6 +70,7 @@ _C.test.device = 'cpu'
 _C.test.stride = 1
 _C.test.auto_padding = False
 _C.test.padding = 0
+_C.test.model_ensemble = []
 
 # inference
 _C.metrics = CN()
