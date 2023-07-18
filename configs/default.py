@@ -71,6 +71,8 @@ _C.test.stride = 1
 _C.test.auto_padding = False
 _C.test.padding = 0
 _C.test.model_ensemble = []
+_C.test.model_ensemble_name = []
+_C.test.model_ensemble_path = []
 
 # inference
 _C.metrics = CN()

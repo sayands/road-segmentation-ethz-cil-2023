@@ -6,17 +6,17 @@ data :
   root_dir : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data
 
 train :
-  batch_size : 4
-  log_every  : 1
+  batch_size : 128
+  log_every  : 50
   save_every : 1
-  epochs: 5
+  epochs: 100
 
 validation:
-  batch_size: 4
+  batch_size: 128
   valid_every: 1
 
 model:
-  encoder: 'mobilenet_v2' #efficientnet-b3, resnet34, densenet169, xception, mobilenet_v2, vgg16
+  encoder: 'vgg16' #efficientnet-b3, resnet34, densenet169, xception, mobilenet_v2, vgg16
 
 loss:
   loss_type: ["ce+ftl"] #["ce"] #options: ce, dice, ftl, ce+dice, ce+ftl
@@ -29,6 +29,6 @@ wandb:
   wandb: true
   entity: "cil-road-seg-2023"
   project: "trial"
-  name: "trial_run_multiloss"
+  name: "vgg16_ce+ftl"
   group: null
-  id : "trial_run_multiloss"
+  id : "vgg16_ce+ftl"

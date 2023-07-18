@@ -159,8 +159,8 @@ def test(config):
                 # make prediction
                 prediction_mask = model_ensemble[0](image)
                 for i in range(1, len(model_ensemble)):
-                    prediction_mask += model_ensemble[i](image)
-                prediction_mask /= len(model_ensemble)
+                    prediction_mask += torch.maximum(prediction_mask, model_ensemble[i](image))
+                # prediction_mask /= len(model_ensemble)
 
                 prediction_mask = prediction_mask[0].cpu().numpy()
                 prediction_mask = np.transpose(prediction_mask, (1, 2, 0))

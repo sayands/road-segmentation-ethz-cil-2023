@@ -115,7 +115,7 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        default="../configs/base_ankita.yaml",
+        default="../configs/base_encoders.yaml",
         help="Path to config file to replace defaults",
     )
     args = parser.parse_args()

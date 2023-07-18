@@ -178,7 +178,7 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        default="../configs/base_test.yaml",
+        default="../configs/base_test_ensemble.yaml",
         help="Path to config file to replace defaults",
     )
     args = parser.parse_args()
