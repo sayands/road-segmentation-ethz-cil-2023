@@ -12,6 +12,10 @@ out_data_dir = osp.join(data_root_dir, 'seg-data')
 out_data_groundtruth_dir = osp.join(out_data_dir, 'groundtruth')
 out_data_images_dir = osp.join(out_data_dir, 'images')
 
+if not osp.exists(out_data_dir): os.makedirs(out_data_dir)
+if not osp.exists(out_data_groundtruth_dir): os.makedirs(out_data_groundtruth_dir)
+if not osp.exists(out_data_images_dir): os.makedirs(out_data_images_dir)
+
 # Only move kaggle training
 split = 'training'
 kaggle_split_dir = osp.join(kaggle_data_dir, split)

@@ -26,7 +26,7 @@ class AerialSeg(Dataset):
         
         # Define data augmentation transforms using Albumentations library
         self.train_transform = A.Compose([
-                                # A.RandomCrop(width = cfg.augment.crop_size[0], height=cfg.augment.crop_size[1]),
+                                A.RandomCrop(width = cfg.augment.crop_size[0], height=cfg.augment.crop_size[1]),
                                 A.HorizontalFlip(p=cfg.augment.h_flip),
                                 A.VerticalFlip(p=cfg.augment.v_flip),
                                 A.Rotate(limit=cfg.augment.rot_degree, p=0.5),
@@ -35,7 +35,7 @@ class AerialSeg(Dataset):
                             ])
         
         self.val_transform = A.Compose([
-                                # A.CenterCrop(width = cfg.augment.crop_size[0], height=cfg.augment.crop_size[1]),
+                                A.CenterCrop(width = cfg.augment.crop_size[0], height=cfg.augment.crop_size[1]),
                                 ToTensorV2(transpose_mask=True)])
         
         print('[INFO] Initialised {} Dataset.'.format(self.split))
