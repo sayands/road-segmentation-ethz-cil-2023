@@ -57,9 +57,9 @@ def train(config):
 
     # Initialise network and trainer
     encoder_name = config["model"]["encoder"]
-    model = smp.DeepLabV3Plus(encoder_name=encoder_name, encoder_depth=5, encoder_weights='imagenet',
-                              encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
-                              in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None)
+    model = smp.UnetPlusPlus(encoder_name=encoder_name, encoder_depth=5, encoder_weights='imagenet',
+                            decoder_use_batchnorm=True, decoder_channels=(256, 128, 64, 32, 16),
+                            decoder_attention_type=None, in_channels=3, classes=2, activation=None, aux_params=None)
 
     trainer = Trainer(config, model, log_dir, device)
     # Setup wandb for logging

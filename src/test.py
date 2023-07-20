@@ -77,28 +77,33 @@ def pad_image(image, start_widths, auto_pad, padding):
     return padding, padded_image
 
 
-def generate_starting_points(max_value, stride):
-    points = [0]
-    while points[-1] + WINDOW_SIZE < max_value:
-        points.append(points[-1] + stride)
-    return points
+def generate_starting_points(start_value, max_value, window_size, stride):
+    start_values = [w for w in range(start_value, max_value - window_size, stride)]
+    # if the stride skips on the very last bit of the image we should still look into it.
+    if max_value - window_size not in start_values:
+        start_values.append(max_value - window_size)
+    return start_values
 
 
-def generate_crops(image, start_widths, start_heights):
+def generate_crops(image, stride):
     height, width, _ = image.shape
-
+    start_heights = generate_starting_points(0, height, WINDOW_SIZE, stride)
+    start_widths = generate_starting_points(0, width, WINDOW_SIZE, stride)
+    if width - WINDOW_SIZE not in start_widths:
+        start_widths.append(width - WINDOW_SIZE)
     for start_width in start_widths:
         for start_height in start_heights:
             yield start_height, start_width, image[start_width:start_width + WINDOW_SIZE,
-                                                   start_height:start_height + WINDOW_SIZE, :]
+                                             start_height:start_height + WINDOW_SIZE, :]
 
 
-def avrg_mask(full_size_mask, stride, height, width):
+def avrg_mask(full_size_mask, stride):
+    height, width, _ = full_size_mask.shape
 
-    avrg_matrix = np.zeros((full_size_mask.shape[0], full_size_mask.shape[1], 1))
+    avrg_matrix = np.zeros((height, width, 1))
 
-    start_heights = generate_starting_points(height, stride)
-    start_widths = generate_starting_points(width, stride)
+    start_heights = generate_starting_points(0, height, WINDOW_SIZE, stride)
+    start_widths = generate_starting_points(0, width, WINDOW_SIZE, stride)
     for height in start_heights:
         for width in start_widths:
             avrg_matrix[height:height + WINDOW_SIZE, width:width + WINDOW_SIZE] += 1
