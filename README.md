@@ -15,6 +15,24 @@ You need a valid Google maps API key set as environment variable: `export GMAPS_
 python data-preprocessing/crawl_aerial_seg.py
 ```
 
+#### Data Merging (After GMaps Crawling)
+Change the paths in ``scripts/merge_data.py`` 
+
+- ``data_root_dir`` : root data directory
+- ``kaggle_data_dir`` : data directory for kaggle competiton data
+-  ``scraped_data_dir`` : data directory for scraped data, (eg, subdirectories : 1_ZOOM_15, 1_ZOOM_16)
+- ``out_data_dir`` : final data directory to be used in training (do not change the name, because we have the config files setup this way)
+
+Change the path in ``scripts/create_splits.py`` - ``data_root_dir`` : root data directory
+
+Run :
+
+```bash
+cd scripts
+python merge_data.py
+python create_splits.py
+
+```
 
 Training Script
 
