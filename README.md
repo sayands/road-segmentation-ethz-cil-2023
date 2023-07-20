@@ -22,6 +22,7 @@ Training Script
 cd src
 python train.py --config ../configs/base.yaml
 ```
+Train with `crop_size` : uncomment lines 29 and 38 in `src/datasets/aerial_data.py`
 
 `config loss params` are as follows:
 - `loss_type`: possible options are- ce (cross-entropy), dice ([dice loss](https://www.jeremyjordan.me/semantic-segmentation/#loss])), ftl ([focal tversky loss](https://towardsdatascience.com/dealing-with-class-imbalanced-image-datasets-1cbd17de76b5)), ce+dice (a combination of cross-entropy and dice loss) and ce+ftl (a combination of cross entropy and focal tversky loss)

@@ -29,8 +29,8 @@ _C.train.save_every = 2
 _C.augment = CN()
 _C.augment.h_flip = 0.5
 _C.augment.v_flip = 0.5
-_C.augment.rot_degree = 20
-_C.augment.brightness = 0.2
+_C.augment.rot_degree = 90
+_C.augment.brightness = 0.5
 _C.augment.crop_size = (256, 256)
 
 # Validation params
