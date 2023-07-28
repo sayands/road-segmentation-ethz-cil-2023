@@ -4,9 +4,9 @@ import os
 import os.path as osp
 import shutil
 
-data_root_dir = '/Users/sayands/Documents/Work/Courses/Computational-Intelligence-Lab/Project/data'
+data_root_dir = '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data'
 kaggle_data_dir = osp.join(data_root_dir, 'kaggle-data')
-scraped_data_dir = osp.join(data_root_dir, 'scraped-data')
+scraped_data_dir = osp.join(data_root_dir, 'collected')
 out_data_dir = osp.join(data_root_dir, 'seg-data')
 
 out_data_groundtruth_dir = osp.join(out_data_dir, 'groundtruth')
@@ -47,9 +47,3 @@ for scraped_folder in scraped_folders:
         shutil.copy(image_path, image_path_dest)
         
         start_count += 1
-        
-        
-        
-    
-    
-    

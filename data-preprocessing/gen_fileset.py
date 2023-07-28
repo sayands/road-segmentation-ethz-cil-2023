@@ -17,8 +17,6 @@ def gen_fileset(data_dir, file_name):
     np.savetxt(file_name, image_names, fmt='%s')
 
 
-
-
 if __name__ == '__main__':
     cfg = config_base.make_cfg()
     data_dir = cfg.data_dir

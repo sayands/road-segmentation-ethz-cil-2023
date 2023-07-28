@@ -126,10 +126,16 @@ def test(config):
     model_ensemble_path = config["test"]["model_ensemble_path"]
     model_ensemble = []
     for i in range(len(model_ensemble_name)):
-        model = smp.UnetPlusPlus(encoder_name=model_ensemble_name[i], encoder_depth=5, encoder_weights='imagenet',
-                         decoder_use_batchnorm=True, decoder_channels=(256, 128, 64, 32, 16),
-                         decoder_attention_type=None, in_channels=3, classes=2, activation=None, aux_params=None).to(
-            config["test"]["device"])
+        if i < 4:
+            model = smp.UnetPlusPlus(encoder_name=model_ensemble_name[i], encoder_depth=5, encoder_weights='imagenet',
+                             decoder_use_batchnorm=True, decoder_channels=(256, 128, 64, 32, 16),
+                             decoder_attention_type=None, in_channels=3, classes=2, activation=None, aux_params=None).to(
+                config["test"]["device"])
+        else:
+            model = smp.DeepLabV3Plus(encoder_name=model_ensemble_name[i], encoder_depth=5, encoder_weights='imagenet',
+                                      encoder_output_stride=16, decoder_channels=256, decoder_atrous_rates=(12, 24, 36),
+                                      in_channels=3, classes=2, activation=None, upsampling=4, aux_params=None).to(
+                config["test"]["device"])
         model.load_state_dict((torch.load(model_ensemble_path[i]))['model'])
         model.eval()
         model_ensemble.append(model)
@@ -156,8 +162,8 @@ def test(config):
                 # make prediction
                 prediction_mask = model_ensemble[0](image)
                 for i in range(1, len(model_ensemble)):
-                    prediction_mask += torch.maximum(prediction_mask, model_ensemble[i](image))
-                # prediction_mask /= len(model_ensemble)
+                    prediction_mask += model_ensemble[i](image)
+                prediction_mask /= len(model_ensemble)
 
                 prediction_mask = prediction_mask[0].cpu().numpy()
                 prediction_mask = np.transpose(prediction_mask, (1, 2, 0))

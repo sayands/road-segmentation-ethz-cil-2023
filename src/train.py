@@ -36,8 +36,9 @@ def train(config):
 
     # Initialise dataset and dataloader
     train_dataset = AerialSeg(config, split='training')
+    print(len(train_dataset))
     valid_dataset = AerialSeg(config, split='validation')
-
+    print(len(valid_dataset))
     img_shape = train_dataset.img_shape
     train_loader = DataLoader(
         dataset=train_dataset,
