@@ -5,6 +5,7 @@ data :
 
 test :
   test_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/test/images
+  test_groundtruth_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/test/masks
   mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/results_ensemble_unet_101
   submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/results_ensemble_unet_101/test_submit_max_ensemble_256.csv
   model_ensemble_name: ['resnet50', 'xception', 'inceptionresnetv2', 'resnet101'] #efficientnet-b3, resnet34, densenet169, xception, mobilenet_v2, vgg16

@@ -41,6 +41,11 @@ cd src
 python train.py --config ../configs/base.yaml
 ```
 
+
+# Validation Ensemble
+Change the ``test`` and ``test_groundtruth_path`` in config files to point to the correct ones.
+
+
 `config loss params` are as follows:
 - `loss_type`: possible options are- ce (cross-entropy), dice ([dice loss](https://www.jeremyjordan.me/semantic-segmentation/#loss])), ftl ([focal tversky loss](https://towardsdatascience.com/dealing-with-class-imbalanced-image-datasets-1cbd17de76b5)), ce+dice (a combination of cross-entropy and dice loss) and ce+ftl (a combination of cross entropy and focal tversky loss)
 - `wlambda`: activated when using ce+dice or ce+ftl loss_type. wlambda is the weightage given to cross-entropy loss. weightage of the other loss will be 1-wlambda.

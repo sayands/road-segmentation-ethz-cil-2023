@@ -53,6 +53,42 @@ def mask_to_submission_strings(image_filename, mask_dir=None):
 #     if mask_dir:
 #         save_mask_as_img(mask, os.path.join(mask_dir, "mask_" + image_filename.split("/")[-1]))
 
+def calculate_metrics(gt_mask, pred_mask):
+    """
+    Calculate True Positives (TP), False Positives (FP),
+    True Negatives (TN), and False Negatives (FN) for binary segmentation task.
+
+    Parameters:
+        gt_mask (numpy.ndarray): Ground truth binary mask (0 or 1).
+        pred_mask (numpy.ndarray): Predicted binary mask (0 or 1).
+
+    Returns:
+        int: True Positives (TP)
+        int: False Positives (FP)
+        int: True Negatives (TN)
+        int: False Negatives (FN)
+    """
+    # Ensure the input masks have the same shape
+    assert gt_mask.shape == pred_mask.shape, "Ground truth and predicted masks must have the same shape."
+
+    gt_mask = (gt_mask/255.).astype(np.uint8)
+    pred_mask = (pred_mask/255.).astype(np.uint8)
+    # Flatten the masks to 1D arrays
+    gt_flat = gt_mask.flatten()
+    pred_flat = pred_mask.flatten()
+
+    # Calculate True Positives (TP), False Positives (FP),
+    # True Negatives (TN), and False Negatives (FN)
+    tp = np.sum(np.logical_and(gt_flat == 1, pred_flat == 1))
+    fp = np.sum(np.logical_and(gt_flat == 0, pred_flat == 1))
+    tn = np.sum(np.logical_and(gt_flat == 0, pred_flat == 0))
+    fn = np.sum(np.logical_and(gt_flat == 1, pred_flat == 0))
+    
+    precision = tp / (tp + fp) if (tp + fp) != 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) != 0 else 0.0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0.0
+
+    return precision, recall, f1_score
 
 def save_mask_as_img(img_arr, mask_filename):
     img = PIL.Image.fromarray(img_arr)
@@ -140,10 +176,17 @@ def test(config):
         model.eval()
         model_ensemble.append(model)
 
+    precisions = []
+    recalls = []
+    f1_scores = []
     # Load and evaluate images
     for path in tqdm.tqdm(os.listdir(config["test"]["test_path"])):
         im_path = os.path.join(os.path.abspath(config["test"]["test_path"]), path)
         # Set model to evaluation
+        
+        gt_path = None
+        if config["test"]["test_groundtruth_path"] != '': gt_path = os.path.join(os.path.abspath(config["test"]["test_groundtruth_path"]), path)
+            
 
         # No gradient tracking
         with torch.no_grad():
@@ -171,9 +214,22 @@ def test(config):
                 :] += prediction_mask
 
             prediction_mask = get_mask(full_size_mask, 256, 0, full_size_image.shape[0], full_size_image.shape[1])
+            
+            if gt_path is not None: gt_mask = cv2.imread(gt_path)
+            precision, recall, f1_score = calculate_metrics(gt_mask, prediction_mask)
+            
+            precisions.append(precision)
+            recalls.append(recall)
+            f1_scores.append(f1_score)
+            
             save_mask_as_img(prediction_mask,
                              os.path.join(config["test"]["mask_results_path"], "mask_" + im_path.split("/")[-1]))
-
+    
+    precisions = np.array(precisions)
+    recalls = np.array(recalls)
+    f1_scores = np.array(f1_scores)
+    
+    print('[INFO] Precision - {}, Recall - {}, F1-Score - {}'.format(np.mean(precisions), np.mean(recalls), np.mean(f1_scores)))
 
 def masks_to_submission(submission_filename, mask_dir, *image_filenames):
     os.makedirs(os.path.dirname(submission_filename), exist_ok=True)
