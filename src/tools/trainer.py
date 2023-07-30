@@ -15,18 +15,35 @@ from src.tools.metrics import eval_metrics
 
 
 class Trainer(nn.Module):
+    """
+    Trainer class responsible for one training step
+    """
+
     def __init__(self, config, model, log_dir, device):
         super().__init__()
+        self.epoch = None
+        self.seg_gt = None
+        self.images = None
+        self.prediction = None
+
+        self.loss_ftl, self.loss_dice, self.loss_ce = None, None, None
+        self.loss_currpointer = None
+        self.loss_alpha, self.loss_gamma, self.loss_wlambda = None, None, None
+        self.loss_type, self.loss_change = None, None
+
+        self.init_loss()
+
         self.device = device
         self.cfg = config
         self.model = model.to(self.device)
         self.log_dir = log_dir
         self.log_dict = {}
 
-        self.log_phase = {"train" : self.log_dict.copy(), "valid": self.log_dict.copy()}
-        
-        self.init_loss()
+        self.log_phase = {"train": self.log_dict.copy(), "valid": self.log_dict.copy()}
+
+        self.optimizer = None
         self.init_optimizer()
+
         self.init_log_dict()
 
     def init_optimizer(self):
@@ -36,20 +53,20 @@ class Trainer(nn.Module):
             lr=self.cfg.optim.lr,
             weight_decay=self.cfg.optim.weight_decay,
         )
-    
+
     def init_loss(self):
         self.loss_change = False if len(self.cfg["loss"]["epochs"]) == 1 else True
         self.loss_type = self.cfg["loss"]["loss_type"][0]
+
         self.loss_wlambda = self.cfg["loss"]["wlambda"][0]
         self.loss_alpha = self.cfg["loss"]["alpha"][0]
         self.loss_gamma = self.cfg["loss"]["gamma"][0]
         self.loss_currpointer = 0
-        
+
         self.loss_ce = nn.CrossEntropyLoss()
         self.loss_dice = DiceLoss()
         self.loss_ftl = FocalTverskyLoss(alpha=self.loss_alpha,
-                                             gamma=self.loss_gamma)
-
+                                         gamma=self.loss_gamma)
 
     def init_log_dict(self, phase="train"):
         """Custom log dict."""
@@ -78,7 +95,13 @@ class Trainer(nn.Module):
         self.prediction = self.model(self.images)
 
     def compute_loss(self, seg_pred, seg_gt, epoch, phase="train"):
-        """Compute loss """
+        """Compute loss according to the given phase and configuration
+        @param seg_pred: the prediction of the model
+        @param seg_gt: the ground truth
+        @param epoch: number of epoch
+        @param phase: phase in which we are train or validation
+        @return:the computed loss
+        """
 
         if self.loss_change and epoch > (self.cfg["loss"]["epochs"])[self.loss_currpointer]:
             self.loss_currpointer += 1
@@ -87,7 +110,7 @@ class Trainer(nn.Module):
             self.loss_alpha = (self.cfg["loss"]["alpha"])[self.loss_currpointer]
             self.loss_gamma = (self.cfg["loss"]["gamma"])[self.loss_currpointer]
 
-        if phase=="train":
+        if phase == "train":
             self.log_dict = self.log_phase["train"]
         elif phase == "valid":
             self.log_dict = self.log_phase["valid"]
@@ -105,28 +128,36 @@ class Trainer(nn.Module):
             self.log_dict["ce_loss"] += loss_ce.item()
             loss_dice = self.loss_dice(seg_pred, seg_gt)
             self.log_dict["dice_loss"] += loss_dice.item()
-            loss = (loss_ce * self.loss_wlambda) + (loss_dice * (1-self.loss_wlambda))
+            loss = (loss_ce * self.loss_wlambda) + (loss_dice * (1 - self.loss_wlambda))
         elif self.loss_type == 'ce+ftl':
             loss_ce = self.loss_ce(seg_pred, torch.squeeze(torch.argmax(seg_gt, dim=1)))
             self.log_dict["ce_loss"] += loss_ce.item()
             loss_ftl = self.loss_ftl(seg_pred, seg_gt, self.loss_alpha, self.loss_gamma)
             self.log_dict["ftl_loss"] += loss_ftl.item()
-            loss = (loss_ce * self.loss_wlambda) + (loss_ftl * (1-self.loss_wlambda))
+            loss = (loss_ce * self.loss_wlambda) + (loss_ftl * (1 - self.loss_wlambda))
         return loss
 
     def backward(self):
-        """Backward pass of the network."""
+        """
+        Backward pass of the network.
+        """
+
         # Compute loss
         loss = self.compute_loss(self.prediction, self.seg_gt, self.epoch)
         self.log_dict['total_loss'] += loss.item()
         metrics = eval_metrics(self.prediction, self.seg_gt)
+
         for k in self.log_dict.keys():
             if "metric" in k:
                 self.log_dict[k] += metrics[k.replace("_metric", "")]
         loss.backward()
 
     def step(self, data, epoch):
-        """A single training step."""
+        """
+        Perform a single training step.
+        @param data: data with which the step will be done
+        @param epoch: number of the epoch
+        """
         self.epoch = epoch
         self.images = data["images"].to(self.device)
         self.seg_gt = data["groundtruth"].to(self.device)
@@ -155,18 +186,24 @@ class Trainer(nn.Module):
                 wandb.log({f"{phase}_{key}": value}, step=step)
         self.init_log_dict(phase=phase)
 
-    def validate(self, loader, img_shape, step=0, epoch=0, save_result=False):
-        """validation function for generating final results."""
+    def validate(self, loader, step=0, epoch=0, save_result=False):
+        """
+        Validation function for generating final results.
+        @param loader: DataLoader
+        @param step: number of step
+        @param epoch: number of epoch
+        @param save_result: if the result should be saved
+        """
         torch.cuda.empty_cache()  # To avoid CUDA out of memory
         self.eval()
         self.init_log_dict(phase="valid")
 
         log.info("Beginning validation...")
         if save_result:
-            self.valid_img_dir = os.path.join(self.log_dir, "img")
-            log.info(f"Saving segmentation result to {self.valid_img_dir}")
-            if not os.path.exists(self.valid_img_dir):
-                os.makedirs(self.valid_img_dir)
+            valid_img_dir = os.path.join(self.log_dir, "img")
+            log.info(f"Saving segmentation result to {valid_img_dir}")
+            if not os.path.exists(valid_img_dir):
+                os.makedirs(valid_img_dir)
 
         wandb_img = []
         wandb_seg_gt = []
@@ -210,16 +247,14 @@ class Trainer(nn.Module):
 
         self.log_dict["total_iter_count"] = len(loader)
 
-        # self.log_dict['total_loss'] /= len(loader)
-        # log_text = f"EPOCH {epoch}/{self.cfg['train']['epochs']}"
-        # log_text += f"{'Loss'} | {valid_loss:.2f}"
-        # wandb.log({"Loss": valid_loss, "Epoch": epoch}, step=step)
-        # log.info(log_text)
-
         self.train()
 
     def save_model(self, epoch, dirname):
-        """Save the model checkpoint."""
+        """
+        Save the model checkpoint.
+        @param epoch: the number of epoch at which the model will be saved
+        @param dirname: the directory where the model will be saved
+        """
         dirpath = os.path.join(self.log_dir, dirname)
         common.ensure_dir(dirpath)
 

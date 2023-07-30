@@ -24,6 +24,10 @@ from src.tools.trainer import Trainer
 
 
 def train(config):
+    """
+    Main training loop function
+    @param config: the configuration from the correspoing .yaml file
+    """
     # Set random seed.
     random.seed(config.seed)
     np.random.seed(config.seed)
@@ -34,12 +38,12 @@ def train(config):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Initialise dataset and dataloader
+    # Initialise dataset and dataloaders
     train_dataset = AerialSeg(config, split='training')
-    print(len(train_dataset))
     valid_dataset = AerialSeg(config, split='validation')
-    print(len(valid_dataset))
+
     img_shape = train_dataset.img_shape
+
     train_loader = DataLoader(
         dataset=train_dataset,
         batch_size=config["train"]["batch_size"],
@@ -47,7 +51,6 @@ def train(config):
         num_workers=config["num_workers"],
         pin_memory=True,
     )
-
     valid_loader = DataLoader(
         dataset=valid_dataset,
         batch_size=config["validation"]["batch_size"],
@@ -63,6 +66,7 @@ def train(config):
                             decoder_attention_type=None, in_channels=3, classes=2, activation=None, aux_params=None)
 
     trainer = Trainer(config, model, log_dir, device)
+
     # Setup wandb for logging
     if config["wandb"]["id"] is not None:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
@@ -112,6 +116,9 @@ def train(config):
 
 
 def parse_args():
+    """
+    Load the configuration file based on the passed arguments to the python file.
+    """
     parser = argparse.ArgumentParser(description="CIL Project")
     parser.add_argument(
         "--config",

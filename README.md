@@ -5,7 +5,8 @@ Install a conda environment using ``requirements.yaml``.
 ```bash
 conda env create -f requirements.yaml
 ```
-### Usage
+### Data collection
+
 
 Change Paths in ``utils/define.py``
 

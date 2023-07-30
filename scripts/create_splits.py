@@ -1,3 +1,7 @@
+"""
+This script splits the dataset into validation and training subsets which are used in the training pipeline
+"""
+
 import numpy as np
 import os
 import os.path as osp

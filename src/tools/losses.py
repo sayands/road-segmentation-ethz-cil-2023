@@ -5,7 +5,8 @@ from torch.nn.functional import one_hot
 
 class DiceLoss(nn.Module):
     """
-    https://www.jeremyjordan.me/semantic-segmentation/
+    Dice Loss as per:
+      https://www.jeremyjordan.me/semantic-segmentation/
     """
 
     def __init__(self, epsilon=1e-4):
@@ -23,7 +24,8 @@ class DiceLoss(nn.Module):
 
 class FocalTverskyLoss(nn.Module):
     """
-    https://towardsdatascience.com/dealing-with-class-imbalanced-image-datasets-1cbd17de76b5
+    Focal Tversky Loss as per:
+        https://towardsdatascience.com/dealing-with-class-imbalanced-image-datasets-1cbd17de76b5
     """
 
     def __init__(self, epsilon=1e-4, alpha=0.8, gamma=1.5):

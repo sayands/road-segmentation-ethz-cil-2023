@@ -6,10 +6,10 @@ data :
 test :
   test_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/images
   test_groundtruth_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/groundtruth
-  mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/test
-  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/test/test_submit_max_ensemble_256.csv
-  model_ensemble_name: ['resnet50', 'xception', 'inceptionresnetv2', 'resnet101'] #efficientnet-b3, resnet34, densenet169, xception, mobilenet_v2, vgg16
-  model_ensemble_path : ['/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_resnet50_ce+ftl_2023-07-19__18-46-31/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_xception_ce+ftl_2023-07-19__19-47-11/100.pth',  '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_inceptionresnetv2_ce+ftl_2023-07-19__20-59-46/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_resnet101_ce+ftl_2023-07-20__02-03-06/100.pth'] #list of the model paths corresponding to the above ensemble_name order
+  mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/random_test
+  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/random_test/test_submit_max_ensemble_256.csv
+  model_ensemble_name: ['resnet101', 'resnet101', 'xception', 'mobilenet_v2', 'efficientnet-b4', 'efficientnet-b4',]
+  model_ensemble_path : ['/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/30K_resnet101_ce+ftl_2023-07-24__09-26-24/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/30K_resnet101_ce_2023-07-26__01-47-49/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/30K_xception_ce_2023-07-28__02-09-41/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/mobilenet_v2_ce+ftl_2023-07-17__19-59-16/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/30K_eff_b4_ce+ftl_2023-07-24__01-03-47/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/30K_eff_b4_ce_2023-07-25__02-31-21/100.pth']
   device : 'cuda'
   stride: 128
   auto_padding: True

@@ -1,7 +1,15 @@
-import numpy as np
 import torch
 
+
 def eval_metrics(pred, target, epsilon=1e-4):
+    """
+    Evaluation of the prediction according to the target, evaluation metrics are:
+    accuracy, precision, recall, F1, mIoU
+    @param pred: the model prediction
+    @param target: ground truth
+    @param epsilon: epsilon parameter for accuracy, recall, precision and f1
+    @return:
+    """
     target = torch.squeeze(torch.argmax(target, dim=1))
     pred = torch.squeeze(torch.argmax(pred, dim=1))
 

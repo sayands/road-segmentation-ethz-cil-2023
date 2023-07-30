@@ -4,11 +4,10 @@ from io import BytesIO
 import numpy as np
 import os
 
-KEYS = ["AIzaSyByICrMoOw9O2APN5b9S0lEcIqLw1vSnt4", "AIzaSyBRr3cZlbyDizvYzRUJvVirv2-B5PMyj_0",
-        "AIzaSyDMv_Ve7nOQKlEorJWjX3GmfPeg7hC06DY", "AIzaSyC50PF5uy5nIVlrH4wc1Hkk3pJB79AypAo"]  # os.getenv('GMAPS_KEY')
-key = KEYS[2]
-assert key
+KEY = os.getenv('GMAPS_KEY')
+assert KEY
 
+# List of city coordinates which will be crawed
 city_coordinates = [
     [
         # Buenos Aires, Argentina
@@ -796,6 +795,7 @@ city_coordinates = [
     ]
 ]
 
+
 IMAGE_RESOLUTION = 400
 CROP_PIXELS = 20
 MIN_ROAD_PERCENTAGE = 10.
@@ -805,23 +805,23 @@ ZOOM_LEVEL = 18
 ITEARTION_STEP = .035
 
 
-def get_satelite_image(location, folder, id):
-    global key
+def get_satellite_image(location, folder, id):
+    """
+    @param location: (longitude, latitude) of the center of the satellite image
+    @param folder: folder name where the satellite image will be saved
+    @param id: identificator for saving the image in the provided folder
+    """
     center_x, center_y = location
+    # Query google maps api for satellite image
     url = "https://maps.googleapis.com/maps/api/staticmap?" + \
           f"center={center_x},{center_y}" + \
           f"&zoom={ZOOM_LEVEL}&size={IMAGE_RESOLUTION + CROP_PIXELS}x{IMAGE_RESOLUTION + CROP_PIXELS}" + \
-          f"&format=PNG&maptype=satellite&key={key}"
+          f"&format=PNG&maptype=satellite&key={KEY}"
     response = requests.get(url)
 
     if response.status_code != 200:
-        if key == KEYS[3]:
-            print(response.text)
-            print(response.status_code)
-            exit()
-        print("Keys changed")
-        get_satelite_image(location, folder, id)
-        key = KEYS[1]
+        print("ERROR while querying Status_code")
+        get_satellite_image(location, folder, id)
 
     image = Image.open(BytesIO(response.content))
     # Get image size
@@ -829,15 +829,23 @@ def get_satelite_image(location, folder, id):
 
     # Crop image to remove bottom 20 pixels
     cropped_image = image.crop((0, 0, width - CROP_PIXELS, height - CROP_PIXELS))
-    print(f"{DATA_FOLDER}/{folder}/{id}.png")
     cropped_image.convert("RGB").save(f"{DATA_FOLDER}/{folder}/{id}.png")
 
 
 def get_street_labels(location, folder, id):
-    global key
+    """
+    Function which will query the geolocation given and save image which will have white roads and everything else
+        blacked out.
+    @param location: (longitude, latitude) of the center of the satellite image
+    @param folder: folder name where the satellite image will be saved
+    @param id: identificator for saving the image in the provided folder
+    @return: the percentage of roads included in the image
+    """
     center_x, center_y = location
+
+    # Query the google maps API
     url = "https://maps.googleapis.com/maps/api/staticmap?" + \
-          f"center={center_x},{center_y}&key={key}&zoom={ZOOM_LEVEL}&" + \
+          f"center={center_x},{center_y}&key={KEY}&zoom={ZOOM_LEVEL}&" + \
           f"size={IMAGE_RESOLUTION + CROP_PIXELS}x{IMAGE_RESOLUTION + CROP_PIXELS}&maptype=roadmap&format=PNG&" + \
           "style=feature:all|element:labels|visibility:off&" + \
           "style=feature:administrative|visibility:off&" + \
@@ -849,13 +857,8 @@ def get_street_labels(location, folder, id):
 
     response = requests.get(url)
     if response.status_code != 200:
-        if key == KEYS[3]:
-            print(response.text)
-            print(response.status_code)
-            exit()
-        print("Keys changed")
-        key = KEYS[3]
-        get_street_labels(location, folder, id)
+        print(f"Bad response code {response.status_code}")
+        exit(-1)
     img_arr = np.array(Image.open(BytesIO(response.content)))
     img_arr[img_arr != 0] = 255
 
@@ -866,6 +869,7 @@ def get_street_labels(location, folder, id):
     # Crop image to remove bottom 20 pixels
     cropped_image = image.crop((0, 0, width - CROP_PIXELS, height - CROP_PIXELS))
 
+    # Compute the percentage of road in the image
     label_percent = np.count_nonzero(img_arr) * 100.0 / ((width - CROP_PIXELS) * (height - CROP_PIXELS))
     if label_percent > MIN_ROAD_PERCENTAGE:
         if not os.path.exists(f"{DATA_FOLDER}/{folder}"):
@@ -877,29 +881,37 @@ def get_street_labels(location, folder, id):
 
 
 def get_data(locations):
-    location_folder_id = 91
-    for location in locations[91:]:
+    """
+    Function which will generate scan through each location provided in the locations array
+    @param locations: should be of format[[Southest longt, Northest longt,Westest lat,Eastest longt], [...]]
+    """
+    location_folder_id = 0
+    # Iterate over each location for scanning
+    for location in locations:
         location_folder = f"{location_folder_id}_ZOOM_{ZOOM_LEVEL}"
         file_id = 1
 
         # By test and trial I got these number as full move in each direction without intersections between images
         # For zoom 16 - .035 
         # For zoom 15 - 0.07
-        step_x = .035 if ZOOM_LEVEL == 16 else .015  # TODO: Make configs
-        step_y = .035 if ZOOM_LEVEL == 16 else .015  # TODO: Make configs
+        step_x, step_y = .015, .015  # Step size when scanning through location
         start_x, end_x, start_y, end_y = location
 
+        # Compute the number of scans
         num_of_scans = int((abs(start_x - end_x) / step_x) * (abs(start_y - end_y) / step_y))
 
         print(f"Starting scanning for location {location_folder}.")
         print(f"Scanned data will be: {num_of_scans} files.")
 
+        # Scan through the whole reagion
         while start_x <= end_x:
             cur_y = start_y
             while cur_y <= end_y:
+                # Get and save the labeling image
                 label_percent = get_street_labels((start_x, cur_y), location_folder, file_id)
                 if label_percent > MIN_ROAD_PERCENTAGE:
-                    get_satelite_image((start_x, cur_y), location_folder, file_id)
+                    # Get sand save the corresponding satellite image
+                    get_satellite_image((start_x, cur_y), location_folder, file_id)
                     file_id += 1
                 cur_y += step_y
                 if file_id % 10 == 0:
@@ -909,7 +921,6 @@ def get_data(locations):
     print("Collected all data.")
 
 
-get_data(city_coordinates)
-
 if __name__ == '__main__':
-    pass
+    get_data(city_coordinates)
+
