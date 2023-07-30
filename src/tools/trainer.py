@@ -76,6 +76,7 @@ class Trainer(nn.Module):
     def forward(self):
         """Forward pass of the network."""
         self.prediction = self.model(self.images)
+
     def compute_loss(self, seg_pred, seg_gt, epoch, phase="train"):
         """Compute loss """
 

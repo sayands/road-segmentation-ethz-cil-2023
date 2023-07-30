@@ -4,13 +4,13 @@ data :
   root_dir : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/log
 
 test :
-  test_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/test/images
-  test_groundtruth_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/test/masks
-  mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/results_ensemble_unet_101
-  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/results_ensemble_unet_101/test_submit_max_ensemble_256.csv
+  test_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/images
+  test_groundtruth_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/groundtruth
+  mask_results_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/test
+  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/test/test_submit_max_ensemble_256.csv
   model_ensemble_name: ['resnet50', 'xception', 'inceptionresnetv2', 'resnet101'] #efficientnet-b3, resnet34, densenet169, xception, mobilenet_v2, vgg16
   model_ensemble_path : ['/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_resnet50_ce+ftl_2023-07-19__18-46-31/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_xception_ce+ftl_2023-07-19__19-47-11/100.pth',  '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_inceptionresnetv2_ce+ftl_2023-07-19__20-59-46/100.pth', '/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/unet_resnet101_ce+ftl_2023-07-20__02-03-06/100.pth'] #list of the model paths corresponding to the above ensemble_name order
   device : 'cuda'
-  stride: 256
+  stride: 128
   auto_padding: True
   padding: 0

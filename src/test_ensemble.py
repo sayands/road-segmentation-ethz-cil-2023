@@ -69,10 +69,11 @@ def calculate_metrics(gt_mask, pred_mask):
         int: False Negatives (FN)
     """
     # Ensure the input masks have the same shape
+    gt_mask = gt_mask[:, :, 0]
     assert gt_mask.shape == pred_mask.shape, "Ground truth and predicted masks must have the same shape."
 
-    gt_mask = (gt_mask/255.).astype(np.uint8)
-    pred_mask = (pred_mask/255.).astype(np.uint8)
+    gt_mask = (gt_mask / 255.).astype(np.uint8)
+    pred_mask = (pred_mask / 255.).astype(np.uint8)
     # Flatten the masks to 1D arrays
     gt_flat = gt_mask.flatten()
     pred_flat = pred_mask.flatten()
@@ -83,12 +84,13 @@ def calculate_metrics(gt_mask, pred_mask):
     fp = np.sum(np.logical_and(gt_flat == 0, pred_flat == 1))
     tn = np.sum(np.logical_and(gt_flat == 0, pred_flat == 0))
     fn = np.sum(np.logical_and(gt_flat == 1, pred_flat == 0))
-    
+
     precision = tp / (tp + fp) if (tp + fp) != 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) != 0 else 0.0
     f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0.0
 
     return precision, recall, f1_score
+
 
 def save_mask_as_img(img_arr, mask_filename):
     img = PIL.Image.fromarray(img_arr)
@@ -109,7 +111,7 @@ def pad_image(image, start_widths, auto_pad, padding):
         padded_height = height + 2 * padding
 
     padded_image = np.zeros((padded_width, padded_height, rgb)).astype(np.float32)
-    padded_image[padding:padding+height, padding:padding+width] = image
+    padded_image[padding:padding + height, padding:padding + width] = image
     return padding, padded_image
 
 
@@ -152,11 +154,18 @@ def get_mask(full_mask, stride, padding, original_image_x, original_image_y):
     prediction_mask *= 255
     prediction_mask = prediction_mask.astype(np.uint8)
     # remove the padding
-    return prediction_mask[padding:padding+original_image_x, padding:padding+original_image_y]
+    return prediction_mask[padding:padding + original_image_x, padding:padding + original_image_y]
+
+
+def get_paths(file='/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/validation.txt',
+              data_prefix='/home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/'):
+    with open(file, 'r') as f:
+        lines = f.readlines()
+        lines = [line[:-1] + '.png' for line in lines]
+        return lines[:200]
 
 
 def test(config):
-
     # Load model
     model_ensemble_name = config["test"]["model_ensemble_name"]
     model_ensemble_path = config["test"]["model_ensemble_path"]
@@ -164,8 +173,9 @@ def test(config):
     for i in range(len(model_ensemble_name)):
         if i < 4:
             model = smp.UnetPlusPlus(encoder_name=model_ensemble_name[i], encoder_depth=5, encoder_weights='imagenet',
-                             decoder_use_batchnorm=True, decoder_channels=(256, 128, 64, 32, 16),
-                             decoder_attention_type=None, in_channels=3, classes=2, activation=None, aux_params=None).to(
+                                     decoder_use_batchnorm=True, decoder_channels=(256, 128, 64, 32, 16),
+                                     decoder_attention_type=None, in_channels=3, classes=2, activation=None,
+                                     aux_params=None).to(
                 config["test"]["device"])
         else:
             model = smp.DeepLabV3Plus(encoder_name=model_ensemble_name[i], encoder_depth=5, encoder_weights='imagenet',
@@ -180,13 +190,14 @@ def test(config):
     recalls = []
     f1_scores = []
     # Load and evaluate images
-    for path in tqdm.tqdm(os.listdir(config["test"]["test_path"])):
+    paths = get_paths()
+    for path in tqdm.tqdm(paths):
         im_path = os.path.join(os.path.abspath(config["test"]["test_path"]), path)
         # Set model to evaluation
-        
+
         gt_path = None
-        if config["test"]["test_groundtruth_path"] != '': gt_path = os.path.join(os.path.abspath(config["test"]["test_groundtruth_path"]), path)
-            
+        if config["test"]["test_groundtruth_path"] != '':
+            gt_path = os.path.join(os.path.abspath(config["test"]["test_groundtruth_path"]), path)
 
         # No gradient tracking
         with torch.no_grad():
@@ -214,22 +225,25 @@ def test(config):
                 :] += prediction_mask
 
             prediction_mask = get_mask(full_size_mask, 256, 0, full_size_image.shape[0], full_size_image.shape[1])
-            
+
             if gt_path is not None: gt_mask = cv2.imread(gt_path)
             precision, recall, f1_score = calculate_metrics(gt_mask, prediction_mask)
-            
+
             precisions.append(precision)
             recalls.append(recall)
             f1_scores.append(f1_score)
-            
+
             save_mask_as_img(prediction_mask,
                              os.path.join(config["test"]["mask_results_path"], "mask_" + im_path.split("/")[-1]))
-    
+
     precisions = np.array(precisions)
     recalls = np.array(recalls)
     f1_scores = np.array(f1_scores)
-    
-    print('[INFO] Precision - {}, Recall - {}, F1-Score - {}'.format(np.mean(precisions), np.mean(recalls), np.mean(f1_scores)))
+
+    print(f'{model_ensemble_name} & {np.mean(precisions)} & { np.mean(recalls)} & {np.mean(f1_scores)}')
+    # print('[INFO] Precision - {}, Recall - {}, F1-Score - {}'.format(np.mean(precisions), np.mean(recalls),
+    #                                                                  np.mean(f1_scores)))
+
 
 def masks_to_submission(submission_filename, mask_dir, *image_filenames):
     os.makedirs(os.path.dirname(submission_filename), exist_ok=True)

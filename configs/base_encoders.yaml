@@ -8,7 +8,7 @@ data :
 train :
   batch_size : 32
   log_every  : 50
-  save_every : 1
+  save_every : 10
   epochs: 100
 
 validation:
@@ -17,10 +17,10 @@ validation:
 
 model:
   # resnet50, efficientnet-b4, xception, inceptionv4, mobilenet_v2
-  encoder: 'resnet101' #resnet50, efficientnet-b3, resnet34, densenet169, xception, inceptionv4, mobilenet_v2, vgg16
+  encoder: 'inceptionv4' #resnet50, efficientnet-b3, resnet34, densenet169, xception, inceptionv4, mobilenet_v2, vgg16
 
 loss:
-  loss_type: ["ce+ftl"] #["ce"] #options: ce, dice, ftl, ce+dice, ce+ftl
+  loss_type: ["ce"] #["ce"] #options: ce, dice, ftl, ce+dice, ce+ftl
   epochs: [100] #[5]
   wlambda: [0.5] #[0.5]
   alpha: [0.7] #[0.7]
@@ -30,6 +30,6 @@ wandb:
   wandb: true
   entity: "cil-road-seg-2023"
   project: "trial"
-  name: "unet_resnet101_ce+ftl"
+  name: "30K_inception_ce"
   group: null
-  id : "unet_resnet101_ce+ftl"
+  id : "30K_inception_ce"
