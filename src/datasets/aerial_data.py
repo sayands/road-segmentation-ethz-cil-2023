@@ -1,14 +1,12 @@
 import os
 import os.path as osp
-import torch
-import numpy as np
-from PIL import Image
-from torch.utils.data import Dataset, DataLoader
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
-import cv2
-
 import sys
+
+import albumentations as A
+import cv2
+import numpy as np
+from albumentations.pytorch import ToTensorV2
+from torch.utils.data import Dataset, DataLoader
 
 sys.path.append('..')
 from configs import config, update_config

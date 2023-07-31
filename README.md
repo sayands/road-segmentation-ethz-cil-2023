@@ -1,17 +1,67 @@
-# Road Segmentation Project - Computational Intelligence Lab - ETHZ 2023
+# Road Segmentation Project -[Computational Inteligence Lab. Spring 2023](https://www.vorlesungen.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=167246&semkez=2023S&ansicht=LEHRVERANSTALTUNGEN&lang=en)
 
-### Requirements 
-Install a conda environment using ``requirements.yaml``. 
+----
+
+## Team
+
+----
+
+- Ankita Ghosh _[anghosh@student.ethz.ch]_
+- Ivan Milev _[imilev@studnet.ethz.ch]_
+- Sayan Deb Sarkar _[sdebsarkar@student.ethz.ch]_
+- Siddharth Menon _[menons@student.ethz.ch]_
+
+# A Multi-Model Ensemble For Robust Road Segmentation Using Staged Training
+
+----
+
+The goal of the project is to present a solution for automated segmentation of roads from satellite images, 
+leveraging the power of Deep Learning techniques. In order to make use of such techniques vast amounts of data are 
+require to satisfy this requirement we came up with our own algorithm of collecting correclty labeled data (described below).
+
+The end results are more than satisfactory. Few examples from our validation dataset are:
+
+|               Input Image                |                Ground Truth                 |                  Prediction                   | 
+|:----------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
+|  ![](README_materials/satimage_415.png)  |  ![](README_materials/satimage_415_GT.png)  |  ![](README_materials/mask_satimage_415.png)  |
+| ![](README_materials/satimage_14095.png) | ![](README_materials/satimage_14095_GT.png) | ![](README_materials/mask_satimage_14095.png) |
+| ![](README_materials/satimage_29612.png) | ![](README_materials/satimage_29612_GT.png) | ![](README_materials/mask_satimage_29612.png) |
+
+In order to achieve these results we came up with the following architecture for training and inference: 
+
+![](README_materials/cil_ensemble.png)
+
+### Networks
+This project is based on PyTorch and trained with CUDA.
+We are using [Segmentation Masks](https://github.com/qubvel/segmentation_models.pytorch) as a backbone to 
+train all our models. To achieve this result we experimented with [UNet++](https://arxiv.org/abs/1807.10165) and [DeepLabV3+](https://arxiv.org/abs/1706.05587)
+with weight initialization from [imagenet](https://arxiv.org/abs/1409.0575). The trained architectures based on the above mentioned backbones are
+[ResNet](https://arxiv.org/abs/1512.03385) 34, [ResNet](https://arxiv.org/abs/1512.03385) 50, [ResNet](https://arxiv.org/abs/1512.03385) 101, [Inception Net](https://arxiv.org/abs/1409.4842), [Xception](https://arxiv.org/abs/1610.02357), [Efficient Net] b3 (https://arxiv.org/abs/1905.11946), [Efficient Net](https://arxiv.org/abs/1905.11946) b4 and [Mobile Net](https://arxiv.org/abs/1704.04861) v2
+
+Data augmentation is done with the help of the [Albumentations library](https://albumentations.ai/) for [PyTorch](https://pytorch.org). 
+ 
+
+## Setup and Usage
+
+### Requirements
+For environment management we've chosen [Anaconda](https://anaconda.org)
+
+In order to initialize our environment with all needed requrement you have to have [conda](https://anaconda.org) installed and then 
+create the environment from `requiremetns.yaml` file:
 ```bash
 conda env create -f requirements.yaml
 ```
 ### Data collection
 
-
-Change Paths in ``utils/define.py``
-
 #### Craw GMAPS for curating dataset:
-You need a valid Google maps API key set as environment variable: `export GMAPS_KEY=YOUR_API_KEY`
+In order to make use of our scripts for dataset collection a valid API key has to be set in the environment
+of the system. The API key has to be for the Static Maps API, you can get it from the corresponding place in 
+the [Google console](https://developers.google.com/maps/documentation/maps-static/overview).
+Once you aquire the key you can export it in bash terminal with: ``export GMAPS_KEY=YOUR_API_KEY`` and/or add it
+to your `~/.bashrc` and then run `source ~\.bashrc`.
+
+In order to run the dataset collection you have to run, the out directory is specified within the script file in the
+global variable `DATA_FOLDER`:
 ```bash
 python data-preprocessing/crawl_aerial_seg.py
 ```
@@ -35,36 +85,108 @@ python create_splits.py
 
 ```
 
-Training Script
+### Training
 
-```bash
-cd src
-python train.py --config ../configs/base.yaml
+For the training script it is required to have a valid configuration file like the once in the `config` folder of the repository.
+The 
+```YAML
+seed        : 42
+num_workers : 4
+log_level   : INFO
+log_dir     : PATH/TO/LOGGING/DIRECTORY
+data :
+  root_dir  : ROOT/DIRECTORY/WHERE/DATA/IS/STORED
+
+train :
+  batch_size : batch_size_for_training
+  log_every  : log_every_X_steps
+  save_every : save_every_Y_epochs
+  epochs: number_of_training_epocjs
+
+validation:
+  batch_size: validation_batch_size
+  valid_every: validation_every_X_epochs
+
+# Loss configuration
+loss:
+  loss_type: ["ce","ce+ftl", "ce+dice"] # options: ce, dice, ftl, ce+dice, ce+ftl
+  epochs: [1,2,5] # [5]
+  wlambda: [0.5,0.3,0.5] #[0.5]
+  alpha: [0.7,0.7,0.9] #[0.7]
+  gamma: [1.5,1.5,1.2] #[1.5]
+
+# WANDB configuration for logging the model training.
+wandb:
+  wandb: true
+  entity: "cil-road-seg-2023"
+  project: "trial"
+  name: "trial_run_multiloss"
+  group: null
+  id : "trial_run_multiloss"
 ```
 
-
-# Validation Ensemble
-Change the ``test`` and ``test_groundtruth_path`` in config files to point to the correct ones.
-
-
-`config loss params` are as follows:
+The `loss` segment of the configuration is as follows:
 - `loss_type`: possible options are- ce (cross-entropy), dice ([dice loss](https://www.jeremyjordan.me/semantic-segmentation/#loss])), ftl ([focal tversky loss](https://towardsdatascience.com/dealing-with-class-imbalanced-image-datasets-1cbd17de76b5)), ce+dice (a combination of cross-entropy and dice loss) and ce+ftl (a combination of cross entropy and focal tversky loss)
 - `wlambda`: activated when using ce+dice or ce+ftl loss_type. wlambda is the weightage given to cross-entropy loss. weightage of the other loss will be 1-wlambda.
 - `alpha`: activated when using ftl or ce+ftl loss type. This is a hyperparameter required in focal tversky loss. The higher the alpha value, the more the false negatives are penalised. Weightage to false positives is 1-alpha.
 - `gamma`: activated when using ftl or ce+ftl loss type. This is a hyperparameter required in focal tversky loss. Gamma is a parameter that controls the non-linearity of the loss. In the case of class imbalance, the FTL becomes useful when gamma > 1. Gamme < 1 is useful towards the end of training as the model is still incentivised to learn even though it is nearing convergence. 
 
 
+Running the training pipline:
+```bash
+cd src
+python train.py --config ../configs/base.yaml
+```
 
-Testing Script
+### Evaluation
 
+In order to evaluate the model on the provided test data we have two scripts:
+1. `src/test.py` which will evaluate single model and create submission.csv file which is ready for kaggle submission.
+2. `src/test_ensemble.py` which will evaluate and ensemble of provided models with their prediction outputs averaged.
+
+In order to run the single model evaluation, configuration of the following format is required:
+```YAML
+log_level   : INFO
+log_dir    : /path/to/log/dir
+test :
+  test_path : /path/to/test/images
+  mask_results_path : /path/to/where/prediction/masks/will/be/saved
+  submission_path : /path/to/where/submission/file/will/be/saved
+  model_path : /path/to/model/weights/save
+  device : which_device_to_be_used(cpu/cuda)
+  stride: stride_for_sliding_window
+  auto_padding: if_auto_padding_should_be_applied
+  padding: padding_value_for_all_sides
+
+```
+Before running test.py you have to change the encoder_architecture name on line: 169 `encoder_name='your_model_encoder_name'`
+Running the test.py:
 ```bash
 cd src
 python test.py --config ../configs/base_test.yaml
 ```
 
-`config test params`:
-- `test_path` : path to folder with test imgaes
-- `mask_results_path` : path to where the mask images should be stored
-- `submission_path` : path to submission file
-- `model_path` : path to the model file
-- `device` : cpu/cuda
+In order to run the ensemble model evaluation the following configuration is required:
+```YAML
+log_level   : INFO
+log_dir    : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/results
+test :
+  test_path : /path/to/test/images
+  test_groundtruth_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/data/seg-data/groundtruth
+  mask_results_path : /path/to/where/prediction/masks/will/be/saved
+  submission_path : /home/ivan/PycharmProjects/ETH/road-segmentation-ethz-cil-2023/src/output/random_test/test_submit_max_ensemble_256.csv
+  model_ensemble_name: [architecture_name_01, architecture_name_02, architecture_name_03]
+  model_ensemble_path : [/path/to/model_01/weights/save,/path/to/model_02/weights/save, /path/to/model_02/weights/save ]
+  device : which_device_to_be_used(cpu/cuda)
+  stride: stride_for_sliding_window
+  auto_padding: if_auto_padding_should_be_applied
+  padding: padding_value_for_all_sides
+
+```
+The test_groundtruth_path is optional parameter if you want to compute F1-Score, Recall and Precision.
+If left out just the masks and submission files will be produced.
+
+```bash
+cd src
+python test.py --config ../configs/base_test.yaml
+```
