@@ -48,6 +48,10 @@ create the environment from `requiremetns.yaml` file:
 ```bash
 conda env create -f requirements.yaml
 ```
+
+### Our model weights
+Model which were trained during the project are available on Google Drive [here](https://drive.google.com/drive/folders/1QMFv-TMrG3yawgh_kruJt7LzG9mU5ePS?usp=sharing).
+
 ### Data collection
 
 #### Craw GMAPS for curating dataset:
