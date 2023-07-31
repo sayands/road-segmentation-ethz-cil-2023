@@ -1,10 +1,8 @@
 # Road Segmentation Project -[Computational Inteligence Lab. Spring 2023](https://www.vorlesungen.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=167246&semkez=2023S&ansicht=LEHRVERANSTALTUNGEN&lang=en)
 
-----
 
 ## Team
 
-----
 
 - Ankita Ghosh _[anghosh@student.ethz.ch]_
 - Ivan Milev _[imilev@studnet.ethz.ch]_
@@ -13,7 +11,6 @@
 
 # A Multi-Model Ensemble For Robust Road Segmentation Using Staged Training
 
-----
 
 The goal of the project is to present a solution for automated segmentation of roads from satellite images, 
 leveraging the power of Deep Learning techniques. In order to make use of such techniques vast amounts of data are 
