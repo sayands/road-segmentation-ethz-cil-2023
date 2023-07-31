@@ -20,15 +20,15 @@ require to satisfy this requirement we came up with our own algorithm of collect
 
 Few examples of predictions from our validation dataset are:
 
-|               Input Image                |                Ground Truth                 |                  Prediction                   | 
-|:----------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
-|  ![](README_materials/satimage_415.png)  |  ![](README_materials/satimage_415_GT.png)  |  ![](README_materials/mask_satimage_415.png)  |
-| ![](README_materials/satimage_14095.png) | ![](README_materials/satimage_14095_GT.png) | ![](README_materials/mask_satimage_14095.png) |
-| ![](README_materials/satimage_29612.png) | ![](README_materials/satimage_29612_GT.png) | ![](README_materials/mask_satimage_29612.png) |
+|              Input Image               |                Ground Truth                 |                  Prediction                   | 
+|:--------------------------------------:|:-------------------------------------------:|:---------------------------------------------:|
+|      ![](assets/satimage_415.png)      |  ![](assets/satimage_415_GT.png)  |  ![](assets/mask_satimage_415.png)  |
+|    ![](assets/satimage_14095.png)     | ![](assets/satimage_14095_GT.png) | ![](assets/mask_satimage_14095.png) |
+|    ![](assets/satimage_29612.png)     | ![](assets/satimage_29612_GT.png) | ![](assets/mask_satimage_29612.png) |
 
 In order to achieve these results we came up with the following architecture for training and inference: 
 
-![](README_materials/cil_ensemble.png)
+![](assets/cil_ensemble.png)
 
 ### Networks
 This project is based on PyTorch and trained with CUDA.
